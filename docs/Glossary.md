@@ -5,8 +5,8 @@ The following is a glossary of terms used throughout these docs. I had to learn 
 ---
 
 - [dword](#dword)
-- [ib](#ib)
-- [id](#id)
+- [imm8](#imm8)
+- [imm32](#imm32)
 - [modr/m](#modrm)
     - [mod](#mod)
     - [reg](#reg)
@@ -35,24 +35,24 @@ The following is a glossary of terms used throughout these docs. I had to learn 
 
 ---
 
-## ib
+## imm8
 
-**Immediate byte**
+**Immediate 8-bit**
 
-This refers to any byte constant that is part of an instruction.
-For example, in `add eax, 0x05`, `0x05` is the *ib*.
+This refers to any 8-bit constant that is part of an instruction.
+For example, in `add eax, 0x05`, `0x05` is the *imm8*.
 
 ---
 
-## id
+## imm32
 
-**Immediate dword** (see [dword](#dword))
+**Immediate 32-bit**
 
-This refers to any dword constant that is part of an instruction.
-For example, in `mov eax, 0x12345678`, `0x12345678` is the *id*.
+This refers to any 32-bit constant that is part of an instruction.
+For example, in `mov eax, 0x12345678`, `0x12345678` is the *imm32*.
 
 These are encoded in **little endian** in the operation bytes.
-For example, `mov eax, 0x12345678` would be encoded as `B8 78 56 34 12`, with the last 4 bytes being the little endian version of the id `0x12345678`.
+For example, `mov eax, 0x12345678` would be encoded as `B8 78 56 34 12`, with the last 4 bytes being the little endian version of the imm32 `0x12345678`.
 
 ---
 
