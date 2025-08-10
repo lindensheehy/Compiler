@@ -303,7 +303,7 @@ Jump if greater or equal (`SF == OF`):
 ---
 
 ## jle  
-Jump if less or equal (`ZF == 1` and `SF != OF`):  
+Jump if less or equal (`ZF == 1` or `SF != OF`):  
 `jle offset`  
 
 ### Encodings:  
