@@ -4,6 +4,8 @@ The following is a glossary of terms used throughout these docs. I had to learn 
 
 ---
 
+## Table of Contents
+
 - [dword](#dword)
 - [imm8](#imm8)
 - [imm32](#imm32)
