@@ -138,13 +138,13 @@ The value `0x12345678` is encoded as:
 Let’s translate the following assembly snippet into this IR format:
 
 ```
-mov eax, 5 ; eax = 5
-add eax, 10 ; eax = eax + 10
-mov ecx, [eax] ; ecx = *eax
+mov eax, 5          ; eax = 5
+add eax, 10         ; eax = eax + 10
+mov ecx, [eax]      ; ecx = *eax
 ```
 
-| Token  | Prefix         | Value              | Bytes           |
-|--------|---------------|--------------------|-----------------|
+| Token  | Prefix        | Value               | Bytes           |
+|--------|---------------|---------------------|-----------------|
 | `mov`  | `'O'` = `0x4F`| `0x15`              | `4F 15`         |
 | `eax`  | `'R'` = `0x52`| `0x00`              | `52 00`         |
 | `5`    | `'I'` = `0x49`| `0x31` + `0x05`     | `49 31 05`      |
@@ -159,8 +159,6 @@ mov ecx, [eax] ; ecx = *eax
 - `0x00` → register `eax`  
 - `0x31` → offset length = 1 byte  
 - `0x00` → offset value = 0  
-
----
 
 **Final encoded bytes:**
 
