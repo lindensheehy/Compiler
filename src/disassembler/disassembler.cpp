@@ -1,4 +1,8 @@
 
+const char* opcodeMap[] = {
+    "add" // 0x00
+};
+
 
 void writeOpcode(char opcode, char* writeBuffer, int* writeBufferLength) {
 
