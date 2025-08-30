@@ -1,4 +1,7 @@
-#include "../../include/disassembler/map.h"
+#include "disassembler/map.h"
+
+#include <string.h>
+
 
 constexpr size_t BYTE_RANGE = 256;
 const char* opcodeMap[BYTE_RANGE];

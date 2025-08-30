@@ -1,6 +1,11 @@
+#include "disassembler/disassembler.h"
+
+#include "disassembler/map.h"
+#include "core/fileio.h"
+
 #include <string.h>
-#include <cstdint>
 #include <cstdio>
+
 
 size_t writeOpcode(char opcode, char* writeBuffer, size_t* writeBufferLength) {
 

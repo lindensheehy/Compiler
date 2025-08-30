@@ -1,8 +1,8 @@
 #pragma once
 
-#include <cstdint>  // for uint8_t
-#include <cstddef>  // for size_t
-#include <string.h> // for strlen
+#include <cstdint>
+#include <cstddef>
+
 
 // Sets up the opcode map. This must be called before using getOpcode()
 void initOpcodeMap();
