@@ -7,7 +7,7 @@
 char* readFile(const char* fileName);
 
 // Returns the length of fileName
-size_t getFileLength(const char* fileName);
+bool getFileLength(const char* fileName, size_t * file_length);
 
 // Appends the contents of writeBuffer to fileNameOut. Will write exactly writeBufferLength bytes.
 void writeFile(const char* fileName, const char* writeBuffer, size_t writeBufferLength);

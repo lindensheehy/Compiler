@@ -176,8 +176,11 @@ void writePadding(char lastPrefix, char nextPrefix, char* writeBuffer, size_t* w
 void generateDisassemble(const char* fileNameIn, const char* fileNameOut) {
 
     char* file = readFile(fileNameIn);
-    size_t fileLength = getFileLength(fileNameIn);
-
+    size_t fileLength;
+    bool file_length_rc = getFileLength(fileNameIn, &fileLength);
+    if(!file_length_rc){
+        return;
+    }
     constexpr size_t WRITE_BUFFER_SIZE = 65536;
     char* writeBuffer = new char[WRITE_BUFFER_SIZE] {0x00};
     size_t writeBufferLength = 0;

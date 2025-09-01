@@ -2,20 +2,46 @@
 #include <cstdio>
 #include <filesystem>
 #include <system_error>
-char* readFile(const char* fileName)
+
+
+#define ELEMENT_SIZE 1
+char * readFile(const char* fileName)
 {
-    size_t file_length = getFileLength(fileName);
-        
+    size_t file_length;
+    bool file_length_found = getFileLength(fileName, &file_length);
+    if(file_length_found)
+    {
+        return nullptr;
+    }
+    if (file_length == 0) return nullptr;
+
+    std::FILE* file = std::fopen(fileName, "rb");
+    if (!file) return nullptr;
+    char* buf = new char[file_length];
+    size_t off = 0;
+    while (off < file_length) 
+    {
+        size_t n = std::fread(buf + off, ELEMENT_SIZE, file_length - off, file);
+        if (n == 0) 
+        {
+            delete[] buf;
+            std::fclose(file);
+            return nullptr;
+        }
+        off += n;
+    }
+    std::fclose(file);
+    return buf;   
 }
 
-size_t getFileLength(const char* fileName) 
+bool getFileLength(const char* fileName, size_t * size) 
 {
     std::error_code ec;
     std::uintmax_t sz = std::filesystem::file_size(fileName, ec);
     if(ec){
-        return 0;
+        return false;
     }else{
-        return sz;
+        return true;
     }
 }
 
