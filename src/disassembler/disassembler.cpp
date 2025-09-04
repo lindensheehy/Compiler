@@ -7,12 +7,12 @@
 #include <cstdio>
 
 
-size_t writeOpcode(char opcode, char* writeBuffer, size_t* writeBufferLength) {
+size_t writeOpcode(uint8_t opcode, uint8_t* writeBuffer, size_t* writeBufferLength) {
 
     size_t strLength;
-    const char* str = getOpcode(static_cast<uint8_t>(opcode), &strLength);
+    const char* str = getOpcode(opcode, &strLength);
 
-    char* writePtr = writeBuffer + (*writeBufferLength);
+    uint8_t* writePtr = writeBuffer + (*writeBufferLength);
     memcpy(writePtr, str, strLength);
 
     (*writeBufferLength) += strLength;
@@ -21,12 +21,12 @@ size_t writeOpcode(char opcode, char* writeBuffer, size_t* writeBufferLength) {
 
 }
 
-size_t writeRegister(char reg, char* writeBuffer, size_t* writeBufferLength) {
+size_t writeRegister(uint8_t reg, uint8_t* writeBuffer, size_t* writeBufferLength) {
     
     size_t strLength;
-    const char* str = getRegister(static_cast<uint8_t>(reg), &strLength);
+    const char* str = getRegister(reg, &strLength);
 
-    char* writePtr = writeBuffer + (*writeBufferLength);
+    uint8_t* writePtr = writeBuffer + (*writeBufferLength);
     memcpy(writePtr, str, strLength);
 
     (*writeBufferLength) += strLength;
@@ -35,15 +35,15 @@ size_t writeRegister(char reg, char* writeBuffer, size_t* writeBufferLength) {
 
 }
 
-size_t writeMemory(char* fileData, size_t startIndex, char* writeBuffer, size_t* writeBufferLength) {
+size_t writeMemory(uint8_t* fileData, size_t startIndex, uint8_t* writeBuffer, size_t* writeBufferLength) {
     
     writeBuffer[(*writeBufferLength)] = '[';
     (*writeBufferLength)++;
 
     writeRegister(fileData[startIndex], writeBuffer, writeBufferLength);
 
-    char offsetLength = fileData[startIndex + 1];
-    char offsetFirst = fileData[startIndex + 2];
+    uint8_t offsetLength = fileData[startIndex + 1];
+    uint8_t offsetFirst = fileData[startIndex + 2];
     if (offsetLength != '1' || offsetFirst != 0x00) {
 
         static constexpr char padding[] = " + ";
@@ -76,7 +76,7 @@ size_t writeMemory(char* fileData, size_t startIndex, char* writeBuffer, size_t*
 
 }
 
-size_t writeImmediate(char* fileData, size_t startIndex, char* writeBuffer, size_t* writeBufferLength) {
+size_t writeImmediate(uint8_t* fileData, size_t startIndex, uint8_t* writeBuffer, size_t* writeBufferLength) {
 
     size_t deltaIndex;
     int written;
@@ -88,7 +88,7 @@ size_t writeImmediate(char* fileData, size_t startIndex, char* writeBuffer, size
             uint8_t value = fileData[startIndex + 1];
 
             const size_t writeSize = 5; // ex. "0x12\0"
-            written = std::snprintf(writeBuffer, writeSize, "0x%X", value);
+            written = std::snprintf(reinterpret_cast<char*>(writeBuffer), writeSize, "0x%X", value);
 
             deltaIndex = 2; // '1' and the byte value
 
@@ -102,7 +102,7 @@ size_t writeImmediate(char* fileData, size_t startIndex, char* writeBuffer, size
             memcpy(&value, fileData + startIndex + 1, sizeof(uint32_t));
 
             const size_t writeSize = 11; // ex. "0x12345678\0"
-            written = std::snprintf(writeBuffer, writeSize, "0x%X", value);
+            written = std::snprintf(reinterpret_cast<char*>(writeBuffer), writeSize, "0x%X", value);
 
             deltaIndex = 5; // '4' and the 4 byte value
 
@@ -123,7 +123,7 @@ size_t writeImmediate(char* fileData, size_t startIndex, char* writeBuffer, size
 
 }
 
-void writePadding(char lastPrefix, char nextPrefix, char* writeBuffer, size_t* writeBufferLength) {
+void writePadding(uint8_t lastPrefix, uint8_t nextPrefix, uint8_t* writeBuffer, size_t* writeBufferLength) {
 
     /*
         There are three types of padding:
@@ -164,7 +164,7 @@ void writePadding(char lastPrefix, char nextPrefix, char* writeBuffer, size_t* w
         padding.len = commaSpacePaddingLen;
     }
 
-    char* writeBufferPointer = writeBuffer + (*writeBufferLength);
+    uint8_t* writeBufferPointer = writeBuffer + (*writeBufferLength);
     memcpy(writeBufferPointer, padding.s, padding.len);
 
     (*writeBufferLength) += padding.len;
@@ -175,14 +175,14 @@ void writePadding(char lastPrefix, char nextPrefix, char* writeBuffer, size_t* w
 
 void generateDisassemble(const char* fileNameIn, const char* fileNameOut) {
 
-    char* file = readFile(fileNameIn);
+    uint8_t* file = readFile(fileNameIn);
     size_t fileLength;
     bool file_length_rc = getFileLength(fileNameIn, &fileLength);
     if(!file_length_rc){
         return;
     }
     constexpr size_t WRITE_BUFFER_SIZE = 65536;
-    char* writeBuffer = new char[WRITE_BUFFER_SIZE] {0x00};
+    uint8_t* writeBuffer = new uint8_t[WRITE_BUFFER_SIZE] {0x00};
     size_t writeBufferLength = 0;
     constexpr size_t WRITE_BUFFER_LIMIT = WRITE_BUFFER_SIZE - 64;
 

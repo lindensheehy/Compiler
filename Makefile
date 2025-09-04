@@ -8,10 +8,7 @@ OBJ_DIR = obj
 TARGET  = my_program
 
 # Pick up .cpp in src/ and key subdirs
-SRCS := $(wildcard $(SRC_DIR)/*.cpp) \
-        $(wildcard $(SRC_DIR)/core/*.cpp) \
-        $(wildcard $(SRC_DIR)/disassembler/*.cpp) \
-        $(wildcard $(SRC_DIR)/assembler/*.cpp)
+SRCS := $(shell find $(SRC_DIR) -name '*.cpp')
 
 # Map e.g. src/disassembler/foo.cpp -> obj/disassembler/foo.o
 OBJS := $(patsubst $(SRC_DIR)/%.cpp,$(OBJ_DIR)/%.o,$(SRCS))
