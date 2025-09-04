@@ -1,6 +1,3 @@
-# Use cmd.exe on Windows
-SHELL := cmd
-
 # Compiler and flags
 CXX = g++
 CXXFLAGS = -Wall -std=c++17 -Iinclude
@@ -30,8 +27,9 @@ $(TARGET): $(OBJS)
 
 # Compile (Windows-safe: make sure the obj subdir exists)
 $(OBJ_DIR)/%.o: $(SRC_DIR)/%.cpp
-	@if not exist "$(subst /,\,$(dir $@))" mkdir "$(subst /,\,$(dir $@))"
+	@mkdir -p $(dir $@)
 	$(CXX) $(CXXFLAGS) -c $< -o $@
+
 
 # Clean (Windows-safe)
 clean:
