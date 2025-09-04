@@ -1,3 +1,6 @@
+# Use cmd.exe on Windows
+SHELL := cmd
+
 # Compiler and flags
 CXX = g++
 CXXFLAGS = -Wall -std=c++17 -Iinclude
@@ -5,11 +8,18 @@ CXXFLAGS = -Wall -std=c++17 -Iinclude
 # Directories
 SRC_DIR = src
 OBJ_DIR = obj
-TARGET = my_program
+TARGET  = my_program
 
-# Source and object files
-SRCS = $(wildcard $(SRC_DIR)/*.cpp)
-OBJS = $(patsubst $(SRC_DIR)/%.cpp,$(OBJ_DIR)/%.o,$(SRCS))
+# Pick up .cpp in src/ and key subdirs
+SRCS := $(wildcard $(SRC_DIR)/*.cpp) \
+        $(wildcard $(SRC_DIR)/core/*.cpp) \
+        $(wildcard $(SRC_DIR)/disassembler/*.cpp) \
+        $(wildcard $(SRC_DIR)/assembler/*.cpp)
+
+# Map e.g. src/disassembler/foo.cpp -> obj/disassembler/foo.o
+OBJS := $(patsubst $(SRC_DIR)/%.cpp,$(OBJ_DIR)/%.o,$(SRCS))
+
+.PHONY: all clean
 
 # Default rule
 all: $(TARGET)
@@ -18,14 +28,13 @@ all: $(TARGET)
 $(TARGET): $(OBJS)
 	$(CXX) $(CXXFLAGS) -o $@ $(OBJS)
 
-# Compile source files into object files
-$(OBJ_DIR)/%.o: $(SRC_DIR)/%.cpp | $(OBJ_DIR)
+# Compile (Windows-safe: make sure the obj subdir exists)
+$(OBJ_DIR)/%.o: $(SRC_DIR)/%.cpp
+	@if not exist "$(subst /,\,$(dir $@))" mkdir "$(subst /,\,$(dir $@))"
 	$(CXX) $(CXXFLAGS) -c $< -o $@
 
-# Ensure obj directory exists
-$(OBJ_DIR):
-	mkdir -p $(OBJ_DIR)
-
-# Clean build files
+# Clean (Windows-safe)
 clean:
-	rm -f $(OBJ_DIR)/*.o $(TARGET)
+	@if exist "$(OBJ_DIR)" rmdir /s /q "$(OBJ_DIR)"
+	@if exist "$(TARGET).exe" del /q "$(TARGET).exe"
+	@if exist "$(TARGET)" del /q "$(TARGET)"

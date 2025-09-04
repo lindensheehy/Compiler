@@ -34,10 +34,10 @@ char * readFile(const char* fileName)
     return buf;   
 }
 
-bool getFileLength(const char* fileName, size_t * size) 
+bool getFileLength(const char* fileName, std::uintmax_t * size) 
 {
     std::error_code ec;
-    std::uintmax_t sz = std::filesystem::file_size(fileName, ec);
+    *size = std::filesystem::file_size(fileName, ec);
     if(ec){
         return false;
     }else{
@@ -46,5 +46,7 @@ bool getFileLength(const char* fileName, size_t * size)
 }
 
 void writeFile(const char* fileName, const char* writeBuffer, size_t writeBufferLength) {
-    
+    // std::ofstream out(fileName, std::ios::binary | std::ios::app);
+    // if (!out) return;
+    // out.write(writeBuffer, static_cast<std::streamsize>(writeBufferLength));
 }
