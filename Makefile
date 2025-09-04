@@ -5,7 +5,7 @@ CXXFLAGS = -Wall -std=c++17 -Iinclude
 # Directories
 SRC_DIR = src
 OBJ_DIR = obj
-TARGET  = my_program
+TARGET  = main
 
 # Pick up .cpp in src/ and key subdirs
 SRCS := $(shell find $(SRC_DIR) -name '*.cpp')
