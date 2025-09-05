@@ -175,13 +175,13 @@ void Disassembler::writePadding(uint8_t lastPrefix, uint8_t nextPrefix, uint8_t*
     
 }
 
-void Disassembler::generateDisassemble(const char* fileNameIn, const char* fileNameOut) {
+ErrorCode Disassembler::generateDisassemble(const char* fileNameIn, const char* fileNameOut) {
 
     uint8_t* file = readFile(fileNameIn);
     size_t fileLength;
     bool file_length_rc = getFileLength(fileNameIn, &fileLength);
     if(!file_length_rc){
-        return;
+        return ErrorCode::INVALID_FILE;
     }
     constexpr size_t WRITE_BUFFER_SIZE = 65536;
     uint8_t* writeBuffer = new uint8_t[WRITE_BUFFER_SIZE] {0x00};
@@ -253,8 +253,8 @@ void Disassembler::generateDisassemble(const char* fileNameIn, const char* fileN
             }
 
             default: {
-                // log error case
-                return;
+                // Log error
+                return ErrorCode::FOUND_INVALID_PREFIX;
             }
 
         }
@@ -273,6 +273,6 @@ void Disassembler::generateDisassemble(const char* fileNameIn, const char* fileN
     delete[] writeBuffer;
     delete[] file;
 
-    return;
+    return ErrorCode::NONE;
 
 }
