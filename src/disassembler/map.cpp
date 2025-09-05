@@ -2,12 +2,14 @@
 
 #include <string.h>
 
+using namespace Disassembler;
+
 
 constexpr size_t BYTE_RANGE = 256;
 const char* opcodeMap[BYTE_RANGE];
 const char* registerMap[BYTE_RANGE];
 
-void initOpcodeMap() {
+void Disassembler::initOpcodeMap() {
     
     // Set all to "???" to make unmapped outputs more readable
     const char* unknown = "???";
@@ -47,7 +49,7 @@ void initOpcodeMap() {
 
 }
 
-void initRegisterMap() {
+void Disassembler::initRegisterMap() {
 
     // Set all to "???" to make unmapped outputs more readable
     const char* unknown = "???";
@@ -69,7 +71,7 @@ void initRegisterMap() {
 
 }
 
-void initMaps() {
+void Disassembler::initMaps() {
 
     initOpcodeMap();
     initRegisterMap();
@@ -78,13 +80,13 @@ void initMaps() {
 
 }
 
-const char* getOpcode(uint8_t opcode, size_t* lengthOut) {
+const char* Disassembler::getOpcode(uint8_t opcode, size_t* lengthOut) {
     const char* ret = opcodeMap[opcode];
     if (lengthOut) (*lengthOut) = strlen(ret);
     return ret;
 }
 
-const char* getRegister(uint8_t reg, size_t* lengthOut) {
+const char* Disassembler::getRegister(uint8_t reg, size_t* lengthOut) {
     const char* ret = registerMap[reg];
     if (lengthOut) (*lengthOut) = strlen(ret);
     return ret;

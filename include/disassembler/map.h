@@ -4,6 +4,8 @@
 #include <cstddef>
 
 
+namespace Disassembler {
+
 // Sets up the opcode map. This must be called before using getOpcode()
 void initOpcodeMap();
 
@@ -20,3 +22,5 @@ const char* getOpcode(uint8_t opcode, size_t* lengthOut);
 // Returns a string that maps to the given register byte. Sets 'lengthOut' to strlen(returnValue)
 // lengthOut == nullptr is valid, in case the length is not needed
 const char* getRegister(uint8_t reg, size_t* lengthOut);
+
+}

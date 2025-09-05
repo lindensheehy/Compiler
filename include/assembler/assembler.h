@@ -4,7 +4,7 @@
 #include <cstddef>
 
 
-namespace Disassembler {
+namespace Assembler {
 
 // Writes an opcode label into the writeBuffer based on the char code passed
 size_t writeOpcode(uint8_t opcode, uint8_t* writeBuffer, size_t* writeBufferLength);
@@ -22,6 +22,6 @@ size_t writeImmediate(uint8_t* fileData, size_t startIndex, uint8_t* writeBuffer
 void writePadding(uint8_t lastPrefix, uint8_t nextPrefix, uint8_t* writeBuffer, size_t* writeBufferLength);
 
 // Top level function. Takes the data from fileNameIn and puts the disassembly into fileNameOut
-void generateDisassemble(const char* fileNameIn, const char* fileNameOut);
+void generateAssemble(const char* fileNameIn, const char* fileNameOut);
 
 }
