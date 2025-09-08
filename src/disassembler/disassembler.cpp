@@ -253,7 +253,6 @@ ErrorCode Disassembler::generateDisassemble(const char* fileNameIn, const char* 
             }
 
             default: {
-                // Log error
                 return ErrorCode::FOUND_INVALID_PREFIX;
             }
 
