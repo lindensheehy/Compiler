@@ -1,5 +1,7 @@
 #pragma once
 
+#include "assembler/Instruction.h"
+
 #include <cstdint>
 #include <cstddef>
 
