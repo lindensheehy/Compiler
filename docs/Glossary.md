@@ -62,7 +62,7 @@ For example, `mov eax, 0x12345678` would be encoded as `B8 78 56 34 12`, with th
 
 **Mode, register, and register/memory**
 
-This is a byte that follows the base opcode for many instructions. It encodes how to interpret the operands involved. 
+This is a byte that follows the base opcode for many instructions. It encodes how to interpret the operands involved. This byte is signaled by `/r`.
 
 This byte is treated as 8 individual bits, which are encoded as follows:
 
