@@ -137,6 +137,51 @@ Sign-extends `eax` into `edx:eax`
 
 ---
 
+## and  
+Performs bitwise AND:  
+`and dest, src`  
+
+### Encodings:  
+| Opcode | Form |  
+| --- | --- |  
+| `21 /r` | `and r/m32, r32` |  
+| `23 /r` | `and r32, r/m32` |  
+| `81 /4` | `and r/m32, imm32` |  
+| `83 /4` | `and r/m32, imm8` |  
+| `25`    | `and eax, imm32` |  
+
+---
+
+## or  
+Performs bitwise OR:  
+`or dest, src`  
+
+### Encodings:  
+| Opcode | Form |  
+| --- | --- |  
+| `09 /r` | `or r/m32, r32` |  
+| `0B /r` | `or r32, r/m32` |  
+| `81 /1` | `or r/m32, imm32` |  
+| `83 /1` | `or r/m32, imm8` |  
+| `0D`    | `or eax, imm32` | 
+
+---
+
+## xor  
+Performs bitwise exclusive OR:  
+`xor dest, src`  
+
+### Encodings:  
+| Opcode | Form |  
+| --- | --- |  
+| `31 /r` | `xor r/m32, r32` |  
+| `33 /r` | `xor r32, r/m32` |  
+| `81 /6` | `xor r/m32, imm32` |  
+| `83 /6` | `xor r/m32, imm8` |  
+| `35`    | `xor eax, imm32` |  
+
+---
+
 ## cmp  
 Compares two operands by subtracting `src` from `dest` (without storing result):  
 `cmp dest, src`
@@ -182,51 +227,6 @@ Performs bitwise AND on two operands and sets flags without storing result:
 | OF | Cleared |
 
 **NOTE:** There are two more flags affected, but neither of them are relevant for this instruction subset
-
----
-
-## and  
-Performs bitwise AND:  
-`and dest, src`  
-
-### Encodings:  
-| Opcode | Form |  
-| --- | --- |  
-| `21 /r` | `and r/m32, r32` |  
-| `23 /r` | `and r32, r/m32` |  
-| `81 /4` | `and r/m32, imm32` |  
-| `83 /4` | `and r/m32, imm8` |  
-| `25`    | `and eax, imm32` |  
-
----
-
-## xor  
-Performs bitwise exclusive OR:  
-`xor dest, src`  
-
-### Encodings:  
-| Opcode | Form |  
-| --- | --- |  
-| `31 /r` | `xor r/m32, r32` |  
-| `33 /r` | `xor r32, r/m32` |  
-| `81 /6` | `xor r/m32, imm32` |  
-| `83 /6` | `xor r/m32, imm8` |  
-| `35`    | `xor eax, imm32` |  
-
----
-
-## or  
-Performs bitwise OR:  
-`or dest, src`  
-
-### Encodings:  
-| Opcode | Form |  
-| --- | --- |  
-| `09 /r` | `or r/m32, r32` |  
-| `0B /r` | `or r32, r/m32` |  
-| `81 /1` | `or r/m32, imm32` |  
-| `83 /1` | `or r/m32, imm8` |  
-| `0D`    | `or eax, imm32` | 
 
 ---
 
