@@ -68,13 +68,13 @@ Registers are signaled by the prefix character `'R'` (ASCII `0x52`). One byte fo
 | Register | Byte   |
 |----------|--------|
 | `eax`    | `0x00` |
-| `ebx`    | `0x01` |
-| `ecx`    | `0x02` |
-| `edx`    | `0x03` |
-| `esi`    | `0x04` |
-| `edi`    | `0x05` |
-| `esp`    | `0x06` |
-| `ebp`    | `0x07` |
+| `ecx`    | `0x01` |
+| `edx`    | `0x02` |
+| `ebx`    | `0x03` |
+| `esp`    | `0x04` |
+| `ebp`    | `0x05` |
+| `esi`    | `0x06` |
+| `edi`    | `0x07` |
 
 ---
 
@@ -95,11 +95,11 @@ Memory references are signaled by the prefix character `'M'` (ASCII `0x4D`). Thi
 The reference `[ecx + 64]` would be encoded as:
 
 ```
-4D 02 31 40
+4D 01 31 40
 ```
 
 - `4D` → `'M'`  
-- `02` → register `ecx`  
+- `01` → register `ecx`  
 - `31` → `'1'` (1-byte offset)  
 - `40` → value `64` (hex)  
 
@@ -152,7 +152,7 @@ mov ecx, [eax]      ; ecx = *eax
 | `eax`  | `'R'` = `0x52`| `0x00`              | `52 00`         |
 | `10`   | `'I'` = `0x49`| `0x31` + `0x0A`     | `49 31 0A`      |
 | `mov`  | `'O'` = `0x4F`| `0x15`              | `4F 15`         |
-| `ecx`  | `'R'` = `0x52`| `0x02`              | `52 02`         |
+| `ecx`  | `'R'` = `0x52`| `0x01`              | `52 01`         |
 | `[eax]`| `'M'` = `0x4D`| (see note)          | `4D 00 31 00`   |
 
 **Note:** For memory references, the register and offset appear without the `'R'` or `'I'` prefixes. Here:  
@@ -165,5 +165,5 @@ mov ecx, [eax]      ; ecx = *eax
 ```
 4F 15   52 00   49 31 05        ; mov eax, 5
 4F 00   52 00   49 31 0A        ; add eax, 10
-4F 15   52 02   4D 00 31 00     ; mov ecx, [eax]
+4F 15   52 01   4D 00 31 00     ; mov ecx, [eax]
 ```
