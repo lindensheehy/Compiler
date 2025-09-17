@@ -1,6 +1,6 @@
 #pragma once
 
-#include "assembler/Instruction.h"
+#include "assembler/data.h"
 
 #include <cstdint>
 #include <cstddef>
