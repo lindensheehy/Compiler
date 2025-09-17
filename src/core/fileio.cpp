@@ -43,3 +43,4 @@ void writeFile(const char* fileName, uint8_t* writeBuffer, size_t writeBufferLen
     // out.write(writeBuffer, static_cast<std::streamsize>(writeBufferLength));
     return;
 }
+
