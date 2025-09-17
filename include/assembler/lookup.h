@@ -58,16 +58,16 @@ constexpr InstructionSignature lookup[] = {
     {Opcode::DEC,   {SignatureOperandType::RM32,      SignatureOperandType::NONE,     SignatureOperandType::NONE}},
 
     // IMUL
-    {Opcode::DEC,   {SignatureOperandType::R32,       SignatureOperandType::RM32,     SignatureOperandType::NONE}},
-    {Opcode::DEC,   {SignatureOperandType::R32,       SignatureOperandType::RM32,     SignatureOperandType::IMM32}},
-    {Opcode::DEC,   {SignatureOperandType::R32,       SignatureOperandType::RM32,     SignatureOperandType::IMM8}},
-    {Opcode::DEC,   {SignatureOperandType::RM32,      SignatureOperandType::NONE,     SignatureOperandType::NONE}},
+    {Opcode::IMUL,  {SignatureOperandType::R32,       SignatureOperandType::RM32,     SignatureOperandType::NONE}},
+    {Opcode::IMUL,  {SignatureOperandType::R32,       SignatureOperandType::RM32,     SignatureOperandType::IMM32}},
+    {Opcode::IMUL,  {SignatureOperandType::R32,       SignatureOperandType::RM32,     SignatureOperandType::IMM8}},
+    {Opcode::IMUL,  {SignatureOperandType::RM32,      SignatureOperandType::NONE,     SignatureOperandType::NONE}},
 
     // IDIV
-    {Opcode::DEC,   {SignatureOperandType::RM32,      SignatureOperandType::NONE,     SignatureOperandType::NONE}},
+    {Opcode::IDIV,  {SignatureOperandType::RM32,      SignatureOperandType::NONE,     SignatureOperandType::NONE}},
 
     // CDQ
-    {Opcode::DEC,   {SignatureOperandType::NONE,      SignatureOperandType::NONE,     SignatureOperandType::NONE}},
+    {Opcode::CDQ,   {SignatureOperandType::NONE,      SignatureOperandType::NONE,     SignatureOperandType::NONE}},
 
     // AND
     {Opcode::AND,   {SignatureOperandType::RM32,      SignatureOperandType::R32,      SignatureOperandType::NONE}},
