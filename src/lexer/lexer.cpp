@@ -97,6 +97,7 @@ void handle_multichar_token(std::vector<token*>* tokenBuffer, uint8_t* start_of_
     auto it = keywords.find(lexeme);
     if (it != keywords.end()) {
         tokenBuffer->push_back(new token{it->second, lexeme});
+        start_of_the_token_ptr = nullptr;
         return;
     }
 
@@ -104,6 +105,7 @@ void handle_multichar_token(std::vector<token*>* tokenBuffer, uint8_t* start_of_
     auto op_it = operators.find(lexeme);
     if (op_it != operators.end()) {
         tokenBuffer->push_back(new token{op_it->second, lexeme});
+        start_of_the_token_ptr = nullptr;
         return;
     }
 
@@ -112,6 +114,7 @@ void handle_multichar_token(std::vector<token*>* tokenBuffer, uint8_t* start_of_
     // For now, it assumes any remaining multi-character token is an identifier.
     // The main lexer loop should handle numbers and strings explicitly by checking the first character.
     tokenBuffer->push_back(new token{TokenType::IDENTIFIER, lexeme});
+    start_of_the_token_ptr = nullptr;
 }
 
 
@@ -122,7 +125,6 @@ std::vector<token*>* lexer(uint8_t* buf, size_t filesize) {
 
     std::vector<token*>* tokenBuffer = new std::vector<token*>();
     size_t i = 0; // Use size_t for indexing
-    bool tokenNew = true;
     uint8_t * start_of_the_token_ptr = nullptr;
     uint8_t * current_char_ptr = buf + i;
     while (i < filesize) {
@@ -143,69 +145,63 @@ std::vector<token*>* lexer(uint8_t* buf, size_t filesize) {
         // 2. Handle single-character tokens which sepparate the tokens
         switch (*current_char_ptr) {
             case ' ':
+                handle_multichar_token(tokenBuffer, start_of_the_token_ptr, current_char_ptr);
                 i++;
                 continue;
             case '(':
                 tokenBuffer->push_back(new token{TokenType::LEFT_PAREN, "("});
+                handle_multichar_token(tokenBuffer, start_of_the_token_ptr, current_char_ptr);
                 i++;
                 continue;
             case ')':
                 tokenBuffer->push_back(new token{TokenType::RIGHT_PAREN, ")"});
+                handle_multichar_token(tokenBuffer, start_of_the_token_ptr, current_char_ptr);
                 i++;
                 continue;
             case '}':
                 tokenBuffer->push_back(new token{TokenType::RIGHT_BRACE, "}"});
+                handle_multichar_token(tokenBuffer, start_of_the_token_ptr, current_char_ptr);
                 i++;
                 continue;
             case '{':
                 tokenBuffer->push_back(new token{TokenType::LEFT_BRACE, "{"});
+                handle_multichar_token(tokenBuffer, start_of_the_token_ptr, current_char_ptr);
                 i++;
                 continue;
             case ';':
                 tokenBuffer->push_back(new token{TokenType::SEMICOLON, ";"});
+                handle_multichar_token(tokenBuffer, start_of_the_token_ptr, current_char_ptr);
                 i++;
                 continue;
             case ',':
                 tokenBuffer->push_back(new token{TokenType::COMMA, ","});
+                handle_multichar_token(tokenBuffer, start_of_the_token_ptr, current_char_ptr);
                 i++;
                 continue;
             case '*':
                 tokenBuffer->push_back(new token{TokenType::STAR, "*"});
+                handle_multichar_token(tokenBuffer, start_of_the_token_ptr, current_char_ptr);
                 i++;
                 continue;
             case '/':
                 tokenBuffer->push_back(new token{TokenType::SLASH, "/"});
+                handle_multichar_token(tokenBuffer, start_of_the_token_ptr, current_char_ptr);
                 i++;
                 continue;
             case '-':
                 tokenBuffer->push_back(new token{TokenType::MINUS, "-"});
+                handle_multichar_token(tokenBuffer, start_of_the_token_ptr, current_char_ptr);
                 i++;
                 continue;
             case '\n':
                 tokenBuffer->push_back(new token{TokenType::NEW_LINE, "\n"});
+                handle_multichar_token(tokenBuffer, start_of_the_token_ptr, current_char_ptr);
                 i++;
                 continue;
         }
 
         //all switch cases failed
-        tokenNew = false;
-        start_of_the_token_ptr = buf + i;
-        //make a helper function to go and deposit all the things into a string and make a token
-        //once a sepparator was found - call the function to go and check for the 
-
-
-        // 4. Handle literals and identifiers
-        // Numbers
-
-        // Identifiers and Keywords
-
-        // 5. Handle strings
-
-        // 6. Handle unrecognized characters (errors)
-        // If the code reaches here, it's an unrecognized character.
-        // You should handle this as a lexical error.
-        
-        // Advance to the next character to avoid infinite loop
+        start_of_the_token_ptr = current_char_ptr;
         i++;
     }
 
