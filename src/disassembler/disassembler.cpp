@@ -180,7 +180,7 @@ ErrorCode Disassembler::generateDisassemble(const char* fileNameIn, const char* 
     uint8_t* file = readFile(fileNameIn);
     size_t fileLength;
     bool file_length_rc = getFileLength(fileNameIn, &fileLength);
-    if(!file_length_rc){
+    if (!file_length_rc) {
         return ErrorCode::INVALID_FILE;
     }
     constexpr size_t WRITE_BUFFER_SIZE = 65536;
