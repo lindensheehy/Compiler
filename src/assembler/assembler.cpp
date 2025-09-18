@@ -1,5 +1,6 @@
 #include "assembler/assembler.h"
 
+#include "assembler/lookup.h"
 #include "core/fileio.h"
 
 #include <cstdio>
@@ -8,34 +9,146 @@
 using namespace Assembler;
 
 
-size_t Assembler::writeOpcode(uint8_t opcode, uint8_t* writeBuffer, size_t* writeBufferLength) {
+size_t Assembler::handleOpcode(uint8_t opcode, Instruction* instruction) {
 
-    return 0;
-
-}
-
-size_t Assembler::writeRegister(uint8_t reg, uint8_t* writeBuffer, size_t* writeBufferLength) {
+    instruction->opcode = static_cast<Opcode>(opcode);
 
     return 1;
 
 }
 
-size_t Assembler::writeMemory(uint8_t* fileData, size_t startIndex, uint8_t* writeBuffer, size_t* writeBufferLength) {
+size_t Assembler::handleRegister(uint8_t reg, Instruction* instruction) {
 
-    return 0;
+    size_t insertionIndex = instruction->operandCount;
+
+    Operand* operand = &(instruction->operands[insertionIndex]);
+    operand->type = OperandType::REGISTER;
+    operand->reg = static_cast<Register>(reg);
+
+    instruction->operandCount++;
+
+    return 1;
 
 }
 
-size_t Assembler::writeImmediate(uint8_t* fileData, size_t startIndex, uint8_t* writeBuffer, size_t* writeBufferLength) {
+size_t Assembler::handleMemory(uint8_t* fileData, size_t startIndex, Instruction* instruction) {
 
-    return 0;
+    size_t insertionIndex = instruction->operandCount;
+
+    Operand* operand = &(instruction->operands[insertionIndex]);
+    operand->type = OperandType::MEMORY;
+    operand->mem.reg = static_cast<Register>(fileData[startIndex]);
+
+    size_t consumed = 0;
+
+    switch (fileData[startIndex + 1]) {
+
+        case '1': {
+
+            operand->mem.offset = static_cast<uint32_t>(fileData[startIndex + 2]);
+
+            consumed = 3;
+
+            break;
+        
+        }
+
+        case '4': {
+            
+            uint32_t bigEndianImm;
+            memcpy(&bigEndianImm, fileData + startIndex + 2, sizeof(uint32_t));
+
+            uint32_t littleEndianImm = 0;
+            littleEndianImm |= (bigEndianImm << 24) & 0xFF000000;
+            littleEndianImm |= (bigEndianImm << 8)  & 0x00FF0000;
+            littleEndianImm |= (bigEndianImm >> 8)  & 0x0000FF00;
+            littleEndianImm |= (bigEndianImm >> 24) & 0x000000FF;
+
+            operand->mem.offset = littleEndianImm;
+
+            consumed = 6;
+
+            break;
+        }
+
+        default: {
+            // log error case
+            break;
+        }
+
+    }
+
+    instruction->operandCount++;
+
+    return consumed;
 
 }
 
-void Assembler::writePadding(uint8_t lastPrefix, uint8_t nextPrefix, uint8_t* writeBuffer, size_t* writeBufferLength) {
+size_t Assembler::handleImmediate(uint8_t* fileData, size_t startIndex, Instruction* instruction) {
+
+    size_t insertionIndex = instruction->operandCount;
+
+    Operand* operand = &(instruction->operands[insertionIndex]);
+    operand->type = OperandType::IMMEDIATE;
+
+    size_t consumed = 0;
+
+    switch (fileData[startIndex]) {
+
+        case '1': {
+
+            operand->immediate.size = 1;
+            operand->immediate.value = static_cast<uint32_t>(fileData[startIndex + 1]);
+
+            consumed = 2;
+
+            break;
+        
+        }
+
+        case '4': {
+
+            operand->immediate.size = 4;
+            
+            uint32_t bigEndianImm;
+            memcpy(&bigEndianImm, fileData + startIndex + 1, sizeof(uint32_t));
+
+            uint32_t littleEndianImm = 0;
+            littleEndianImm |= (bigEndianImm << 24) & 0xFF000000;
+            littleEndianImm |= (bigEndianImm << 8)  & 0x00FF0000;
+            littleEndianImm |= (bigEndianImm >> 8)  & 0x0000FF00;
+            littleEndianImm |= (bigEndianImm >> 24) & 0x000000FF;
+
+            operand->immediate.value = littleEndianImm;
+
+            consumed = 5;
+
+            break;
+        }
+
+        default: {
+            // log error case
+            break;
+        }
+
+    }
+
+    instruction->operandCount++;
+
+    return consumed;
+
+}
+
+void Assembler::assembleInstruction(const Instruction& instruction, InstructionBytes* instructionBytesOut) {
 
     return;
     
+}
+
+void Assembler::writeInstruction(const InstructionBytes& instructionBytes, uint8_t* writeBuffer, size_t* writeBufferLength) {
+
+    return;
+
 }
 
 ErrorCode Assembler::generateAssemble(const char* fileNameIn, const char* fileNameOut) {
@@ -51,8 +164,9 @@ ErrorCode Assembler::generateAssemble(const char* fileNameIn, const char* fileNa
     size_t writeBufferLength = 0;
     constexpr size_t WRITE_BUFFER_LIMIT = WRITE_BUFFER_SIZE - 64;
 
-    char lastPrefix = 0;
     size_t bytesConsumed;
+    Instruction instructionBuilder {};
+    InstructionBytes instructionBytes {};
 
     // initMaps();
 
@@ -63,8 +177,11 @@ ErrorCode Assembler::generateAssemble(const char* fileNameIn, const char* fileNa
             // Opcode
             case 'O': {
 
-                // bytesConsumed = writeOpcode(file[i + 1], writeBuffer, &writeBufferLength);
-                // i += bytesConsumed;
+                assembleInstruction(instructionBuilder, &instructionBytes);
+                writeInstruction(instructionBytes, writeBuffer, &writeBufferLength);
+
+                bytesConsumed = handleOpcode(file[i + 1], &instructionBuilder);
+                i += bytesConsumed;
 
                 break;
 
@@ -73,8 +190,8 @@ ErrorCode Assembler::generateAssemble(const char* fileNameIn, const char* fileNa
             // Register
             case 'R': {
 
-                // bytesConsumed = writeRegister(file[i + 1], writeBuffer, &writeBufferLength);
-                // i += bytesConsumed;
+                bytesConsumed = handleRegister(file[i + 1], &instructionBuilder);
+                i += bytesConsumed;
                 
                 break;
                 
@@ -83,8 +200,8 @@ ErrorCode Assembler::generateAssemble(const char* fileNameIn, const char* fileNa
             // Memory
             case 'M': {
 
-                // bytesConsumed = writeMemory(file, i + 1, writeBuffer, &writeBufferLength);
-                // i += bytesConsumed;
+                bytesConsumed = handleMemory(file, i + 1, &instructionBuilder);
+                i += bytesConsumed;
                 
                 break;
                 
@@ -93,8 +210,8 @@ ErrorCode Assembler::generateAssemble(const char* fileNameIn, const char* fileNa
             // Immediate
             case 'I': {
 
-                // bytesConsumed = writeImmediate(file, i + 1, writeBuffer, &writeBufferLength);
-                // i += bytesConsumed;
+                bytesConsumed = handleImmediate(file, i + 1, &instructionBuilder);
+                i += bytesConsumed;
                 
                 break;
                 
@@ -111,8 +228,6 @@ ErrorCode Assembler::generateAssemble(const char* fileNameIn, const char* fileNa
             memset(writeBuffer, 0x00, WRITE_BUFFER_SIZE);
             writeBufferLength = 0;
         }
-
-        lastPrefix = file[i];
 
     }
 

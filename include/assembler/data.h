@@ -82,6 +82,7 @@ struct Instruction {
     Opcode opcode;
 
     Operand operands[3];
+    uint8_t operandCount;
 
 };
 
