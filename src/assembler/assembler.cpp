@@ -141,6 +141,18 @@ size_t Assembler::handleImmediate(uint8_t* fileData, size_t startIndex, Instruct
 
 void Assembler::assembleInstruction(const Instruction& instruction, InstructionBytes* instructionBytesOut) {
 
+    
+
+    for (int i = 0; i < lookupLength; i++) {
+
+        if (instruction.opcode == lookup[i].opcode) {
+
+
+
+        }
+
+    }
+
     return;
     
 }
