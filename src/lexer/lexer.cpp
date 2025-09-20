@@ -3,6 +3,7 @@
 #include <vector>
 #include <string>
 #include <unordered_map>
+#include <string_view>
 
 
 enum class TokenType {
@@ -41,14 +42,47 @@ enum class TokenType {
     END_OF_FILE,
 };
 
+constexpr size_t ONE_BYTE = 1;
+
 struct token{//TBD move to header file
     TokenType token;
-    const char * tokenValue;
+    const uint8_t* start; // Pointer back to the original source buffer
+    size_t length;
     //add more stuff
+
 };
 
+
+struct TokenBuffer {
+    token* data;
+    size_t size;
+    size_t capacity;
+};
+
+// --- Functions to manage the TokenBuffer ---
+
+// Initializes the buffer with an initial capacity
+void init_buffer(TokenBuffer* buffer, size_t initial_capacity) {
+    buffer->data = (token*)malloc(initial_capacity * sizeof(token));
+    buffer->size = 0;
+    buffer->capacity = initial_capacity;
+}
+
+// Frees the memory owned by the buffer
+void free_buffer(TokenBuffer* buffer) {
+    if (buffer->data) {
+        free(buffer->data);
+    }
+    buffer->data = nullptr;
+    buffer->size = 0;
+    buffer->capacity = 0;
+}
+
+// Adds a token to the buffer, resizing if necessary
+
+
 //TBD: think of better way to handle these maps
-std::unordered_map<std::string, TokenType> keywords = {
+std::unordered_map<std::string_view, TokenType> keywords = {
     {"int", TokenType::INT},
     {"return", TokenType::RETURN},
     {"if", TokenType::IF},
@@ -58,7 +92,7 @@ std::unordered_map<std::string, TokenType> keywords = {
     {"print", TokenType::PRINT}
 };
 
-std::unordered_map<std::string, TokenType> operators = {
+std::unordered_map<std::string_view, TokenType> operators = {
     {"=", TokenType::EQUAL},
     {"+", TokenType::PLUS},
     {"==", TokenType::EQUAL_EQUAL},
@@ -87,125 +121,148 @@ const char* range_to_cstr(const uint8_t* start, const uint8_t* end) {
     return cstr;
 }
 
-void handle_multichar_token(std::vector<token*>* tokenBuffer, uint8_t* start_of_the_token_ptr, uint8_t* current_char_ptr) {
-    if (!start_of_the_token_ptr)
+void push_token(TokenBuffer* buffer, token t) {
+    // Check if we need to grow the buffer
+    if (buffer->size >= buffer->capacity) {
+        size_t new_capacity = buffer->capacity * 2 + 8; //TBD edit to make a normal formula
+        
+        // realloc is a C function that tries to resize a memory block.
+        // It might move the block, so we must update our pointer.
+        token* new_data = (token*)realloc(buffer->data, new_capacity * sizeof(token));
+
+        if (!new_data) {
+            // Handle allocation failure
+            return;
+        }
+        
+        buffer->data = new_data;
+        buffer->capacity = new_capacity;
+    }
+
+    // Now we have space. Add the token.
+    buffer->data[buffer->size] = t;
+    buffer->size++;
+    return;
+
+}
+
+
+void handle_multichar_token(TokenBuffer tokenBuffer, uint8_t* start_of_the_token_ptr, uint8_t* current_char_ptr) {
+    //TBD ADD LOGIC FOR MULTICHAR TOKENS
+    size_t length_of_token;
+    if(start_of_the_token_ptr){
+            length_of_token = static_cast<size_t>(current_char_ptr - start_of_the_token_ptr);
+    }else{
         return;
-
-    const char * lexeme = range_to_cstr(start_of_the_token_ptr, current_char_ptr);
-
+    }
+    //all switch cases failed or they stopped the token
+    //TBD add logic to push multichar token
+    std::string_view lexeme(reinterpret_cast<const char*>(start_of_the_token_ptr), length_of_token);
     // 1. Check if the lexeme is a keyword
     auto it = keywords.find(lexeme);
-    if (it != keywords.end()) {
-        tokenBuffer->push_back(new token{it->second, lexeme});
-        start_of_the_token_ptr = nullptr;
-        return;
-    }
-
-    // 2. Check if the lexeme is an operator
     auto op_it = operators.find(lexeme);
-    if (op_it != operators.end()) {
-        tokenBuffer->push_back(new token{op_it->second, lexeme});
+    if (it != keywords.end()) { 
+        // tokenBuffer.push_back(new token{it->second, lexeme});
+        // start_of_the_token_ptr = nullptr;
+        push_token(&tokenBuffer, token{it->second, start_of_the_token_ptr, length_of_token});
         start_of_the_token_ptr = nullptr;
-        return;
     }
-
+    // 2. Check if the lexeme is an operator
+    
+    else if (op_it != operators.end()) {
+        push_token(&tokenBuffer, token{op_it->second, start_of_the_token_ptr, length_of_token});
+        start_of_the_token_ptr = nullptr;
+    }else{
     // 3. If it's neither a keyword nor an operator, it's a literal.
     // This is a simplified approach and TBD: will need more logic to distinguish numbers from identifiers and strings.
     // For now, it assumes any remaining multi-character token is an identifier.
     // The main lexer loop should handle numbers and strings explicitly by checking the first character.
-    tokenBuffer->push_back(new token{TokenType::IDENTIFIER, lexeme});
+    push_token(&tokenBuffer, token{TokenType::IDENTIFIER, start_of_the_token_ptr, length_of_token}); //start of the token ptr because thats where token starts
     start_of_the_token_ptr = nullptr;
+    }
 }
 
 
-std::vector<token*>* lexer(uint8_t* buf, size_t filesize) {
-    if (!buf || filesize == 0) {
-        return nullptr;
-    }
 
-    std::vector<token*>* tokenBuffer = new std::vector<token*>();
-    size_t i = 0; // Use size_t for indexing
+TokenBuffer lexer(uint8_t* buf, size_t filesize) {
+    TokenBuffer tokenBuffer;
+    init_buffer(&tokenBuffer, filesize/4); // TBD: make a nice nice estimation like 3 chars per token or something
+
+    if (!buf || filesize == 0)
+        return tokenBuffer;
+    
+    uint8_t* end = buf + filesize;
+    size_t i = 0;
     uint8_t * start_of_the_token_ptr = nullptr;
-    uint8_t * current_char_ptr = buf + i;
+    uint8_t * current_char_ptr = buf;
+    size_t length_of_token = 0;
     while (i < filesize) {
         current_char_ptr = buf + i;
 
-        // 1. Skip whitespace
-        if (*current_char_ptr == ' ') {
-            i++;
-            continue;
-        }
 
-        // 3. Handle multi-character tokens
-        //to handle multi character tokens we shall set a pointer to the first letter, start_of_token = buf + i;
-        //then once we find a sepparator which is in switch case - we will set the new token to TRUE, and in case the pointer was nullptr = we shall 
-        // collect all the letters from that pointer.
+        if(!start_of_the_token_ptr)
+            length_of_token = ONE_BYTE;
+        
 
-
-        // 2. Handle single-character tokens which sepparate the tokens
-        switch (*current_char_ptr) {
+        switch (*current_char_ptr) { //change to index plz... TBD and add the last token logic
             case ' ':
-                handle_multichar_token(tokenBuffer, start_of_the_token_ptr, current_char_ptr);
                 i++;
                 continue;
             case '(':
-                tokenBuffer->push_back(new token{TokenType::LEFT_PAREN, "("});
+                push_token(&tokenBuffer, token{TokenType::LEFT_PAREN, current_char_ptr, length_of_token});
                 handle_multichar_token(tokenBuffer, start_of_the_token_ptr, current_char_ptr);
                 i++;
                 continue;
             case ')':
-                tokenBuffer->push_back(new token{TokenType::RIGHT_PAREN, ")"});
+                push_token(&tokenBuffer, token{TokenType::RIGHT_PAREN, current_char_ptr, length_of_token});
                 handle_multichar_token(tokenBuffer, start_of_the_token_ptr, current_char_ptr);
                 i++;
                 continue;
             case '}':
-                tokenBuffer->push_back(new token{TokenType::RIGHT_BRACE, "}"});
-                handle_multichar_token(tokenBuffer, start_of_the_token_ptr, current_char_ptr);
+                push_token(&tokenBuffer, token{TokenType::RIGHT_BRACE, current_char_ptr, length_of_token});
                 i++;
                 continue;
             case '{':
-                tokenBuffer->push_back(new token{TokenType::LEFT_BRACE, "{"});
-                handle_multichar_token(tokenBuffer, start_of_the_token_ptr, current_char_ptr);
+                push_token(&tokenBuffer, token{TokenType::LEFT_BRACE, current_char_ptr, length_of_token});
                 i++;
                 continue;
             case ';':
-                tokenBuffer->push_back(new token{TokenType::SEMICOLON, ";"});
-                handle_multichar_token(tokenBuffer, start_of_the_token_ptr, current_char_ptr);
+                push_token(&tokenBuffer, token{TokenType::SEMICOLON, current_char_ptr, length_of_token});
                 i++;
                 continue;
             case ',':
-                tokenBuffer->push_back(new token{TokenType::COMMA, ","});
-                handle_multichar_token(tokenBuffer, start_of_the_token_ptr, current_char_ptr);
+                push_token(&tokenBuffer, token{TokenType::COMMA, current_char_ptr, length_of_token});
                 i++;
                 continue;
             case '*':
-                tokenBuffer->push_back(new token{TokenType::STAR, "*"});
-                handle_multichar_token(tokenBuffer, start_of_the_token_ptr, current_char_ptr);
+                push_token(&tokenBuffer, token{TokenType::STAR, current_char_ptr, length_of_token});
                 i++;
                 continue;
             case '/':
-                tokenBuffer->push_back(new token{TokenType::SLASH, "/"});
-                handle_multichar_token(tokenBuffer, start_of_the_token_ptr, current_char_ptr);
+                push_token(&tokenBuffer, token{TokenType::SLASH, current_char_ptr, length_of_token});
                 i++;
                 continue;
             case '-':
-                tokenBuffer->push_back(new token{TokenType::MINUS, "-"});
-                handle_multichar_token(tokenBuffer, start_of_the_token_ptr, current_char_ptr);
+                push_token(&tokenBuffer, token{TokenType::MINUS, current_char_ptr, length_of_token});
                 i++;
                 continue;
             case '\n':
-                tokenBuffer->push_back(new token{TokenType::NEW_LINE, "\n"});
-                handle_multichar_token(tokenBuffer, start_of_the_token_ptr, current_char_ptr);
+                push_token(&tokenBuffer, token{TokenType::NEW_LINE, current_char_ptr, length_of_token});
                 i++;
+                continue;
+            default:
+                if(!start_of_the_token_ptr){
+                    start_of_the_token_ptr = current_char_ptr;
+                    i++;
+                }
                 continue;
         }
 
-        //all switch cases failed
-        start_of_the_token_ptr = current_char_ptr;
+        
         i++;
     }
 
     // After the loop, add the EOF token
-    tokenBuffer->push_back(new token{TokenType::END_OF_FILE, nullptr});
+    push_token(&tokenBuffer, token{TokenType::END_OF_FILE, current_char_ptr, length_of_token}); //TBD figure out if you need it
     return tokenBuffer;
 }
