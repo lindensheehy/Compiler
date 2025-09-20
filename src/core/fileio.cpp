@@ -14,10 +14,10 @@ uint8_t* readFile(const char* fileName) {
     if (!file) return nullptr;
 
     uint8_t* buf = new uint8_t[file_length];
-    size_t n = std::fread(buf, file_length, 1, file);
+    size_t n = std::fread(buf, 1, file_length, file);
     std::fclose(file);
 
-    if (n == 0) {
+    if (n != file_length || n == 0) {
         delete[] buf;
         return nullptr;
     }
