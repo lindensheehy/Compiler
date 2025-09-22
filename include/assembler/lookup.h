@@ -34,8 +34,11 @@ struct InstructionSignature {
     SignatureOperandType operands[3];
 };
 
-constexpr size_t lookupLength = sizeof(lookup) / sizeof(InstructionSignature);
 constexpr InstructionSignature lookup[] = {
+
+    /*
+        Smaller 'preference' value is preferred
+    */
 
     // ADD
     {2, Opcode::ADD,   {SignatureOperandType::RM32,      SignatureOperandType::R32,      SignatureOperandType::NONE}},
@@ -162,6 +165,7 @@ constexpr InstructionSignature lookup[] = {
     {1, Opcode::NOP,   {SignatureOperandType::NONE,      SignatureOperandType::NONE,     SignatureOperandType::NONE}},
 
 };
+constexpr size_t lookupLength = sizeof(lookup) / sizeof(InstructionSignature);
 
 bool operandIs(const Operand& operand, SignatureOperandType signatureOperandType);
 

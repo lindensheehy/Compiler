@@ -139,22 +139,55 @@ size_t Assembler::handleImmediate(uint8_t* fileData, size_t startIndex, Instruct
 
 }
 
-void Assembler::assembleInstruction(const Instruction& instruction, InstructionBytes* instructionBytesOut) {
+const InstructionSignature* matchInstruction(const Instruction& instruction) {
 
-    
+    const InstructionSignature* matchFound = nullptr;
 
-    for (int i = 0; i < lookupLength; i++) {
+    bool successfulMatch;
 
-        if (instruction.opcode == lookup[i].opcode) {
+    for (size_t i = 0; i < lookupLength; i++) {
 
+        if (instruction.opcode != lookup[i].opcode) continue;
 
+        successfulMatch = true;
 
+        for (size_t j = 0; j < 3; j++) {
+
+            if (j >= instruction.operandCount) {
+                if (lookup[i].operands[j] != SignatureOperandType::NONE) {
+                    successfulMatch = false;
+                    break;
+                }
+                continue;
+            }
+
+            if (!operandIs(instruction.operands[j], lookup[i].operands[j])) {
+                successfulMatch = false;
+                break;
+            }
+
+        }
+
+        if (successfulMatch) {
+            if (matchFound == nullptr || lookup[i].preference < matchFound->preference) {
+                matchFound = &(lookup[i]);
+                if (matchFound->preference == 1) return matchFound;
+            }
         }
 
     }
 
-    return;
-    
+    return matchFound;
+
+}
+
+bool Assembler::assembleInstruction(const Instruction& instruction, InstructionBytes* instructionBytesOut) {
+
+    const InstructionSignature* match = matchInstruction(instruction);
+    if (match == nullptr) return true;
+
+    return false;
+
 }
 
 void Assembler::writeInstruction(const InstructionBytes& instructionBytes, uint8_t* writeBuffer, size_t* writeBufferLength) {

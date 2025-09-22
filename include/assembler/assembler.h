@@ -27,7 +27,7 @@ size_t handleMemory(uint8_t* fileData, size_t startIndex, Instruction* instructi
 size_t handleImmediate(uint8_t* fileData, size_t startIndex, Instruction* instruction);
 
 // Writes the padding between labels based on what type of labels are nearby
-void assembleInstruction(const Instruction& instruction, InstructionBytes* instructionBytesOut);
+bool assembleInstruction(const Instruction& instruction, InstructionBytes* instructionBytesOut);
 
 // Writes the IntructionBytes into the writeBuffer. Conditionally writes parts depending on the contents
 void writeInstruction(const InstructionBytes& instructionBytes, uint8_t* writeBuffer, size_t* writeBufferLength);

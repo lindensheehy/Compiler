@@ -27,9 +27,6 @@ $(OBJ_DIR)/%.o: $(SRC_DIR)/%.cpp
 	@mkdir -p $(dir $@)
 	$(CXX) $(CXXFLAGS) -c $< -o $@
 
-
 # Clean (Windows-safe)
 clean:
-	@if exist "$(OBJ_DIR)" rmdir /s /q "$(OBJ_DIR)"
-	@if exist "$(TARGET).exe" del /q "$(TARGET).exe"
-	@if exist "$(TARGET)" del /q "$(TARGET)"
+	rm -rf $(OBJ_DIR) $(TARGET)

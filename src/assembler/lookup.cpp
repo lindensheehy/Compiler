@@ -39,6 +39,9 @@ bool Assembler::operandIs(const Operand& operand, SignatureOperandType signature
                 case SignatureOperandType::RM32:
                     return true;
 
+                default:
+                    return false;
+
             }
 
         }
