@@ -11,7 +11,7 @@ enum class ErrorCode : uint32_t {
     FOUND_INVALID_PREFIX = 2,
 };
 
-// Top level function. Takes the data from fileNameIn and puts the disassembly into fileNameOut
+// Takes the data from fileNameIn and puts the disassembly into fileNameOut
 ErrorCode generateDisassemble(const char* fileNameIn, const char* fileNameOut);
 
 }
