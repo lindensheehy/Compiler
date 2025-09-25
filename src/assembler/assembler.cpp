@@ -9,7 +9,8 @@
 using namespace Assembler;
 
 
-size_t Assembler::handleOpcode(uint8_t opcode, Instruction* instruction) {
+// Writes an opcode label into 'instruction'
+size_t handleOpcode(uint8_t opcode, Instruction* instruction) {
 
     instruction->opcode = static_cast<Opcode>(opcode);
 
@@ -17,7 +18,8 @@ size_t Assembler::handleOpcode(uint8_t opcode, Instruction* instruction) {
 
 }
 
-size_t Assembler::handleRegister(uint8_t reg, Instruction* instruction) {
+// Writes a register label into 'instruction'
+size_t handleRegister(uint8_t reg, Instruction* instruction) {
 
     size_t insertionIndex = instruction->operandCount;
 
@@ -31,7 +33,8 @@ size_t Assembler::handleRegister(uint8_t reg, Instruction* instruction) {
 
 }
 
-size_t Assembler::handleMemory(uint8_t* fileData, size_t startIndex, Instruction* instruction) {
+// Writes a memory reference label into 'instruction'
+size_t handleMemory(uint8_t* fileData, size_t startIndex, Instruction* instruction) {
 
     size_t insertionIndex = instruction->operandCount;
 
@@ -84,7 +87,8 @@ size_t Assembler::handleMemory(uint8_t* fileData, size_t startIndex, Instruction
 
 }
 
-size_t Assembler::handleImmediate(uint8_t* fileData, size_t startIndex, Instruction* instruction) {
+// Writes an immediate value label into 'instruction'
+size_t handleImmediate(uint8_t* fileData, size_t startIndex, Instruction* instruction) {
 
     size_t insertionIndex = instruction->operandCount;
 
@@ -139,6 +143,7 @@ size_t Assembler::handleImmediate(uint8_t* fileData, size_t startIndex, Instruct
 
 }
 
+// Returns a pointer to the InstructionSignature that best fits the Instruction. Returns nullptr if none match
 const InstructionSignature* matchInstruction(const Instruction& instruction) {
 
     const InstructionSignature* matchFound = nullptr;
@@ -181,7 +186,8 @@ const InstructionSignature* matchInstruction(const Instruction& instruction) {
 
 }
 
-bool Assembler::assembleInstruction(const Instruction& instruction, InstructionBytes* instructionBytesOut) {
+// Assembles the instruction data from 'instruction' into 'instructionBytes'
+bool assembleInstruction(const Instruction& instruction, InstructionBytes* instructionBytesOut) {
 
     const InstructionSignature* match = matchInstruction(instruction);
     if (match == nullptr) return true;
@@ -190,7 +196,8 @@ bool Assembler::assembleInstruction(const Instruction& instruction, InstructionB
 
 }
 
-void Assembler::writeInstruction(const InstructionBytes& instructionBytes, uint8_t* writeBuffer, size_t* writeBufferLength) {
+// Writes the IntructionBytes into the writeBuffer. Conditionally writes parts depending on the contents
+void writeInstruction(const InstructionBytes& instructionBytes, uint8_t* writeBuffer, size_t* writeBufferLength) {
 
     return;
 
