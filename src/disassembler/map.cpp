@@ -9,7 +9,8 @@ constexpr size_t BYTE_RANGE = 256;
 const char* opcodeMap[BYTE_RANGE];
 const char* registerMap[BYTE_RANGE];
 
-void Disassembler::initOpcodeMap() {
+// Sets up the opcode map. This must be called before using getOpcode()
+void initOpcodeMap() {
     
     // Set all to "???" to make unmapped outputs more readable
     const char* unknown = "???";
@@ -49,7 +50,8 @@ void Disassembler::initOpcodeMap() {
 
 }
 
-void Disassembler::initRegisterMap() {
+// Sets up the register map. This must be called before using getRegister()
+void initRegisterMap() {
 
     // Set all to "???" to make unmapped outputs more readable
     const char* unknown = "???";

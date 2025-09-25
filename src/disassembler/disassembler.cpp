@@ -4,12 +4,14 @@
 #include "core/fileio.h"
 
 #include <string.h>
+#include <cstddef>
 #include <cstdio>
 
 using namespace Disassembler;
 
 
-size_t Disassembler::writeOpcode(uint8_t opcode, uint8_t* writeBuffer, size_t* writeBufferLength) {
+// Writes an opcode label into the writeBuffer based on the char code passed
+size_t writeOpcode(uint8_t opcode, uint8_t* writeBuffer, size_t* writeBufferLength) {
 
     size_t strLength;
     const char* str = getOpcode(opcode, &strLength);
@@ -23,7 +25,8 @@ size_t Disassembler::writeOpcode(uint8_t opcode, uint8_t* writeBuffer, size_t* w
 
 }
 
-size_t Disassembler::writeRegister(uint8_t reg, uint8_t* writeBuffer, size_t* writeBufferLength) {
+// Writes a register label into the writeBuffer based on the char code passed
+size_t writeRegister(uint8_t reg, uint8_t* writeBuffer, size_t* writeBufferLength) {
     
     size_t strLength;
     const char* str = getRegister(reg, &strLength);
@@ -37,7 +40,8 @@ size_t Disassembler::writeRegister(uint8_t reg, uint8_t* writeBuffer, size_t* wr
 
 }
 
-size_t Disassembler::writeMemory(uint8_t* fileData, size_t startIndex, uint8_t* writeBuffer, size_t* writeBufferLength) {
+// Writes a memory reference label into the writeBuffer based on the designated chunk of memory in fileData
+size_t writeMemory(uint8_t* fileData, size_t startIndex, uint8_t* writeBuffer, size_t* writeBufferLength) {
     
     writeBuffer[(*writeBufferLength)] = '[';
     (*writeBufferLength)++;
@@ -78,7 +82,8 @@ size_t Disassembler::writeMemory(uint8_t* fileData, size_t startIndex, uint8_t* 
 
 }
 
-size_t Disassembler::writeImmediate(uint8_t* fileData, size_t startIndex, uint8_t* writeBuffer, size_t* writeBufferLength) {
+// Writes an immediate value label into the writeBuffer based on the designated chunk of memory in fileData
+size_t writeImmediate(uint8_t* fileData, size_t startIndex, uint8_t* writeBuffer, size_t* writeBufferLength) {
 
     size_t deltaIndex;
     int written;
@@ -125,7 +130,8 @@ size_t Disassembler::writeImmediate(uint8_t* fileData, size_t startIndex, uint8_
 
 }
 
-void Disassembler::writePadding(uint8_t lastPrefix, uint8_t nextPrefix, uint8_t* writeBuffer, size_t* writeBufferLength) {
+// Writes the padding between labels based on what type of labels are nearby
+void writePadding(uint8_t lastPrefix, uint8_t nextPrefix, uint8_t* writeBuffer, size_t* writeBufferLength) {
 
     /*
         There are three types of padding:

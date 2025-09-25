@@ -6,12 +6,6 @@
 
 namespace Disassembler {
 
-// Sets up the opcode map. This must be called before using getOpcode()
-void initOpcodeMap();
-
-// Sets up the register map. This must be called before using getRegister()
-void initRegisterMap();
-
 // Calls all necessary init functions for the maps
 void initMaps();
 
