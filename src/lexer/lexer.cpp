@@ -100,13 +100,18 @@ std::unordered_map<std::string_view, TokenType> operators = {
     {"+=", TokenType::PLUS_EQUAL}
 };
 
-
-// Adds a token to the buffer, resizing if necessary
-void push_token(TokenBuffer* buffer, Token t) {
+void push_token(TokenBuffer* buffer, Token t,  size_t filesize) {
     // Check if we need to grow the buffer
     if (buffer->size >= buffer->capacity) {
-        size_t new_capacity = buffer->capacity * 2 + 8; //TBD edit to make a normal formula
-        
+        size_t new_capacity;
+        float ratio = static_cast<float>(filesize)/static_cast<float>(buffer->size);
+        if(ratio < 2 && ratio > 1.1){//TBD see if really it makes since moving by small increments does not make sense
+            new_capacity = static_cast<size_t>((buffer->size) + (buffer->size) * ratio); 
+        }else{
+            new_capacity = (buffer->size) * 2; 
+        }
+
+        //size is too much smaller - then just double
         // realloc is a C function that tries to resize a memory block.
         // It might move the block, so we must update our pointer.
         Token* new_data = (Token*)realloc(buffer->data, new_capacity * sizeof(Token));
@@ -127,7 +132,7 @@ void push_token(TokenBuffer* buffer, Token t) {
 
 }
 
-void handle_multichar_token(TokenBuffer* tokenBuffer, uint8_t* start_of_the_token, size_t length) {
+void handle_multichar_token(TokenBuffer* tokenBuffer, uint8_t* start_of_the_token, size_t length, size_t filesize) {
 
     if (!start_of_the_token) return;
 
@@ -138,14 +143,14 @@ void handle_multichar_token(TokenBuffer* tokenBuffer, uint8_t* start_of_the_toke
     // 1. Check if the lexeme is a keyword
     auto it = keywords.find(lexeme);
     if (it != keywords.end()) { 
-        push_token(tokenBuffer, Token{it->second, start_of_the_token, length});
+        push_token(tokenBuffer, Token{it->second, start_of_the_token, length}, filesize);
         return;
     }
 
     // 2. Check if the lexeme is an operator
     auto op_it = operators.find(lexeme);
     if (op_it != operators.end()) {
-        push_token(tokenBuffer, Token{op_it->second, start_of_the_token, length});
+        push_token(tokenBuffer, Token{op_it->second, start_of_the_token, length}, filesize);
         return;
     }
 
@@ -153,7 +158,7 @@ void handle_multichar_token(TokenBuffer* tokenBuffer, uint8_t* start_of_the_toke
     // This is a simplified approach and TBD: will need more logic to distinguish numbers from identifiers and strings.
     // For now, it assumes any remaining multi-character token is an identifier.
     // The main lexer loop should handle numbers and strings explicitly by checking the first character.
-    push_token(tokenBuffer, Token{TokenType::IDENTIFIER, start_of_the_token, length}); //start of the token ptr because thats where token starts
+    push_token(tokenBuffer, Token{TokenType::IDENTIFIER, start_of_the_token, length}, filesize); //start of the token ptr because thats where token starts
 
     return;
 
@@ -248,8 +253,8 @@ TokenBuffer lexer(uint8_t* buf, size_t filesize) {
 
         if (tokenBreak) {
 
-            push_token(&tokenBuffer, Token{newTokenType, &(buf[i]), length_of_token});
-            handle_multichar_token(&tokenBuffer, &(buf[start_of_the_token]), length_of_token);
+            push_token(&tokenBuffer, Token{newTokenType, &(buf[i]), length_of_token}, filesize);
+            handle_multichar_token(&tokenBuffer, &(buf[start_of_the_token]), length_of_token, filesize);
 
             start_of_the_token = -1;
             length_of_token = 1;
