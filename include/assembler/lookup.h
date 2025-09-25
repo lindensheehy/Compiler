@@ -28,10 +28,36 @@ enum class SignatureOperandType : uint8_t {
 
 };
 
+enum class Immediate : uint8_t {
+    NONE,
+    ONE_BYTE,
+    FOUR_BYTES,
+};
+
+enum class Displacement : uint8_t {
+    NONE,
+    ONE_BYTE,
+    FOUR_BYTES,
+};
+
+enum class ModRM : uint8_t {
+    NO,
+    YES,
+};
+
+typedef uint8_t Preference;
+typedef uint32_t OpcodeBytes;
+typedef uint8_t OpcodeBytesLength;
+
 struct InstructionSignature {
-    uint8_t preference;
+    Preference preference;
     Opcode opcode;
     SignatureOperandType operands[3];
+    OpcodeBytes opcodeBytes;
+    OpcodeBytesLength opcodeBytesLength;
+    ModRM modRmByte;
+    Immediate immediate;
+    Displacement displacement;
 };
 
 constexpr InstructionSignature lookup[] = {
@@ -41,11 +67,27 @@ constexpr InstructionSignature lookup[] = {
     */
 
     // ADD
-    {2, Opcode::ADD,   {SignatureOperandType::RM32,      SignatureOperandType::R32,      SignatureOperandType::NONE}},
-    {2, Opcode::ADD,   {SignatureOperandType::R32,       SignatureOperandType::RM32,     SignatureOperandType::NONE}},
-    {4, Opcode::ADD,   {SignatureOperandType::RM32,      SignatureOperandType::IMM32,    SignatureOperandType::NONE}},
-    {3, Opcode::ADD,   {SignatureOperandType::RM32,      SignatureOperandType::IMM8,     SignatureOperandType::NONE}},
-    {1, Opcode::ADD,   {SignatureOperandType::EAX,       SignatureOperandType::IMM32,    SignatureOperandType::NONE}},
+    {
+        Preference{2}, Opcode::ADD, 
+        {SignatureOperandType::RM32, SignatureOperandType::R32, SignatureOperandType::NONE},
+        OpcodeBytes{0x29}, OpcodeBytesLength{1}, ModRM::YES, Immediate::NONE, Displacement::NONE
+    },
+    {
+        2, Opcode::ADD, 
+        {SignatureOperandType::R32, SignatureOperandType::RM32, SignatureOperandType::NONE}
+    },
+    {
+        4, Opcode::ADD, 
+        {SignatureOperandType::RM32, SignatureOperandType::IMM32, SignatureOperandType::NONE}
+    },
+    {
+        3, Opcode::ADD, 
+        {SignatureOperandType::RM32, SignatureOperandType::IMM8, SignatureOperandType::NONE}
+    },
+    {
+        1, Opcode::ADD, 
+        {SignatureOperandType::EAX, SignatureOperandType::IMM32, SignatureOperandType::NONE}
+    },
 
     // SUB
     {2, Opcode::SUB,   {SignatureOperandType::RM32,      SignatureOperandType::R32,      SignatureOperandType::NONE}},

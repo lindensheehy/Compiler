@@ -186,7 +186,7 @@ const InstructionSignature* matchInstruction(const Instruction& instruction) {
 
 }
 
-// Assembles the instruction data from 'instruction' into 'instructionBytes'
+// Assembles the instruction data from 'instruction' into 'instructionBytes'. Returns true on a failiure
 bool assembleInstruction(const Instruction& instruction, InstructionBytes* instructionBytesOut) {
 
     const InstructionSignature* match = matchInstruction(instruction);
