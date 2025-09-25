@@ -80,8 +80,6 @@ void free_buffer(TokenBuffer* buffer) {
     buffer->capacity = 0;
 }
 
-// Adds a token to the buffer, resizing if necessary
-
 
 //TBD: think of better way to handle these maps
 std::unordered_map<std::string_view, TokenType> keywords = {
@@ -102,6 +100,8 @@ std::unordered_map<std::string_view, TokenType> operators = {
     {"+=", TokenType::PLUS_EQUAL}
 };
 
+
+// Adds a token to the buffer, resizing if necessary
 void push_token(TokenBuffer* buffer, Token t) {
     // Check if we need to grow the buffer
     if (buffer->size >= buffer->capacity) {
