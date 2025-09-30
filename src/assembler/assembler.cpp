@@ -192,6 +192,74 @@ bool assembleInstruction(const Instruction& instruction, InstructionBytes* instr
     const InstructionSignature* match = matchInstruction(instruction);
     if (match == nullptr) return true;
 
+    // Opcode
+    {
+        memcpy(&(instructionBytesOut->opcode), &(match->opcode), sizeof(instructionBytesOut->opcode));
+    }
+
+    // ModR/M byte
+    {
+        bool needModrmByte;
+        switch (match->mode) {
+
+            case Mode::SLASH_R:
+            case Mode::SLASH_0:
+            case Mode::SLASH_1:
+            case Mode::SLASH_2:
+            case Mode::SLASH_3:
+            case Mode::SLASH_4:
+            case Mode::SLASH_5:
+            case Mode::SLASH_6:
+            case Mode::SLASH_7:
+            case Mode::SLASH_8:
+            case Mode::SLASH_9:
+                needModrmByte = true;
+                break;
+
+            case Mode::NONE:
+            case Mode::PLUS_RD:
+            default:
+                needModrmByte = false;
+                break;
+
+        }
+    }
+
+    // Displacement
+    {
+        bool eligableForDisplacement = false;
+        size_t onOperand;
+        size_t range = (sizeof(match->operands) / sizeof(SignatureOperandType));
+        for (size_t i = 0; i < range; i++) {
+            switch (match->operands[i]) {
+
+                case SignatureOperandType::RM32:
+                case SignatureOperandType::MEM:
+                    eligableForDisplacement = true;
+                    onOperand = i;
+                    break;
+
+                default:
+                    break;
+
+            }
+        }
+
+        if (!eligableForDisplacement) goto END_DISPLACEMENT;
+        
+        Operand focusOperand = instruction.operands[onOperand];
+        if (focusOperand.type != OperandType::MEMORY) goto END_DISPLACEMENT;
+
+        
+
+    }
+    END_DISPLACEMENT:
+
+    // Immediate
+    {
+
+    }
+
     return false;
 
 }
