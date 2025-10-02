@@ -70,6 +70,7 @@ struct Operand {
 
         struct {
             Register reg;
+            uint8_t offsetSize;
             uint32_t offset;
         } mem;
 
@@ -91,10 +92,9 @@ struct InstructionBytes {
     public:
         uint8_t opcode[4];
         uint8_t modrm;
-    private:
-        uint8_t padding[3];
-    public:
+        uint8_t displacementSize;
         uint32_t displacement;
+        uint8_t immediateSize;
         uint32_t immediate;
 
 };

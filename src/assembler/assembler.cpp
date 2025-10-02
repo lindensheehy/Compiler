@@ -231,6 +231,10 @@ bool assembleInstruction(const Instruction& instruction, InstructionBytes* instr
         size_t onOperand;
         size_t range = (sizeof(match->operands) / sizeof(SignatureOperandType));
         for (size_t i = 0; i < range; i++) {
+
+            Operand currentOperand = instruction.operands[i];
+            if (currentOperand.type != OperandType::MEMORY) continue;
+
             switch (match->operands[i]) {
 
                 case SignatureOperandType::RM32:
@@ -245,19 +249,50 @@ bool assembleInstruction(const Instruction& instruction, InstructionBytes* instr
             }
         }
 
-        if (!eligableForDisplacement) goto END_DISPLACEMENT;
-        
-        Operand focusOperand = instruction.operands[onOperand];
-        if (focusOperand.type != OperandType::MEMORY) goto END_DISPLACEMENT;
-
-        
-
+        if (eligableForDisplacement) {
+            Operand focusOperand = instruction.operands[onOperand];
+            instructionBytesOut->displacement = focusOperand.mem.offset;
+            instructionBytesOut->displacementSize = focusOperand.mem.offsetSize;
+        }
     }
-    END_DISPLACEMENT:
 
     // Immediate
     {
+        bool eligableForImmediate = false;
+        size_t onOperand;
+        size_t range = (sizeof(match->operands) / sizeof(SignatureOperandType));
+        for (size_t i = 0; i < range; i++) {
 
+            Operand currentOperand = instruction.operands[i];
+            if (currentOperand.type != OperandType::IMMEDIATE) continue;
+
+            switch (match->operands[i]) {
+
+                case SignatureOperandType::IMM8:
+                    if (currentOperand.immediate.size > 1) return true;
+                    [[fallthrough]];
+
+                case SignatureOperandType::IMM16:
+                    if (currentOperand.immediate.size > 2) return true;
+                    [[fallthrough]];
+
+                case SignatureOperandType::IMM32: {
+                    eligableForImmediate = true;
+                    onOperand = i;
+                    break;
+                }
+                
+                default:
+                   return true;
+
+            }
+
+        }
+
+        if (eligableForImmediate) {
+            instructionBytesOut->immediate = instruction.operands[onOperand].immediate.value;
+            instructionBytesOut->immediateSize = instruction.operands[onOperand].immediate.size;
+        }
     }
 
     return false;
@@ -287,8 +322,6 @@ ErrorCode Assembler::generateAssemble(const char* fileNameIn, const char* fileNa
     size_t bytesConsumed;
     Instruction instructionBuilder {};
     InstructionBytes instructionBytes {};
-
-    // initMaps();
 
     for (size_t i = 0; i < fileLength; i++) {
 
