@@ -36,19 +36,23 @@ enum class Immediate : uint8_t {
 };
 
 enum class Mode : uint8_t {
-    NONE,
-    SLASH_R,
-    SLASH_0,
-    SLASH_1,
-    SLASH_2,
-    SLASH_3,
-    SLASH_4,
-    SLASH_5,
-    SLASH_6,
-    SLASH_7,
-    SLASH_8,
-    SLASH_9,
-    PLUS_RD,
+
+    NONE = 12,
+
+    SLASH_0 = 0,
+    SLASH_1 = 1,
+    SLASH_2 = 2,
+    SLASH_3 = 3,
+    SLASH_4 = 4,
+    SLASH_5 = 5,
+    SLASH_6 = 6,
+    SLASH_7 = 7,
+    SLASH_8 = 8,
+    SLASH_9 = 9,
+    SLASH_R = 10,
+
+    PLUS_RD = 11,
+    
 };
 
 typedef uint8_t Preference;

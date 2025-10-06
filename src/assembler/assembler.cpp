@@ -5,6 +5,7 @@
 
 #include <cstdio>
 #include <string.h>
+#include <algorithm>
 
 using namespace Assembler;
 
@@ -194,7 +195,29 @@ bool assembleInstruction(const Instruction& instruction, InstructionBytes* instr
 
     // Opcode
     {
-        memcpy(&(instructionBytesOut->opcode), &(match->opcode), sizeof(instructionBytesOut->opcode));
+        memcpy(
+            &(instructionBytesOut->opcode), 
+            &(match->opcode), 
+            std::min(sizeof(match->opcode), static_cast<size_t>(match->opcodeBytesLength))
+        );
+
+        if (match->mode == Mode::PLUS_RD) {
+            
+            // Find which register is used in the instruction
+            Register reg = Register::NONE;
+            for (uint8_t i = 0; i < instruction.operandCount; i++) {
+                if (instruction.operands[i].type == OperandType::REGISTER) {
+                    reg = instruction.operands[i].reg;
+                    break;
+                }
+            }
+
+            if (reg == Register::NONE) return true;
+
+            uint8_t writeIndex = std::min(sizeof(instructionBytesOut->opcode) - 1, static_cast<size_t>(instructionBytesOut->opcodeSize - 1));
+            instructionBytesOut->opcode[writeIndex] += static_cast<uint8_t>(reg);
+
+        }
     }
 
     // ModR/M byte
@@ -202,7 +225,6 @@ bool assembleInstruction(const Instruction& instruction, InstructionBytes* instr
         bool needModrmByte;
         switch (match->mode) {
 
-            case Mode::SLASH_R:
             case Mode::SLASH_0:
             case Mode::SLASH_1:
             case Mode::SLASH_2:
@@ -213,11 +235,10 @@ bool assembleInstruction(const Instruction& instruction, InstructionBytes* instr
             case Mode::SLASH_7:
             case Mode::SLASH_8:
             case Mode::SLASH_9:
-                needModrmByte = true;
+            case Mode::SLASH_R:
+            needModrmByte = true;
                 break;
 
-            case Mode::NONE:
-            case Mode::PLUS_RD:
             default:
                 needModrmByte = false;
                 break;
@@ -232,8 +253,8 @@ bool assembleInstruction(const Instruction& instruction, InstructionBytes* instr
         size_t range = (sizeof(match->operands) / sizeof(SignatureOperandType));
         for (size_t i = 0; i < range; i++) {
 
-            Operand currentOperand = instruction.operands[i];
-            if (currentOperand.type != OperandType::MEMORY) continue;
+            const Operand* currentOperand = &(instruction.operands[i]);
+            if (currentOperand->type != OperandType::MEMORY) continue;
 
             switch (match->operands[i]) {
 
@@ -263,17 +284,17 @@ bool assembleInstruction(const Instruction& instruction, InstructionBytes* instr
         size_t range = (sizeof(match->operands) / sizeof(SignatureOperandType));
         for (size_t i = 0; i < range; i++) {
 
-            Operand currentOperand = instruction.operands[i];
-            if (currentOperand.type != OperandType::IMMEDIATE) continue;
+            const Operand* currentOperand = &(instruction.operands[i]);
+            if (currentOperand->type != OperandType::IMMEDIATE) continue;
 
             switch (match->operands[i]) {
 
                 case SignatureOperandType::IMM8:
-                    if (currentOperand.immediate.size > 1) return true;
+                    if (currentOperand->immediate.size > 1) return true;
                     [[fallthrough]];
 
                 case SignatureOperandType::IMM16:
-                    if (currentOperand.immediate.size > 2) return true;
+                    if (currentOperand->immediate.size > 2) return true;
                     [[fallthrough]];
 
                 case SignatureOperandType::IMM32: {

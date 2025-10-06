@@ -38,6 +38,8 @@ enum class Opcode : uint8_t {
 
 enum class Register : uint8_t {
 
+    NONE = 0x08,
+
     EAX = 0x00,
     ECX = 0x01,
     EDX = 0x02,
@@ -91,6 +93,7 @@ struct InstructionBytes {
 
     public:
         uint8_t opcode[4];
+        uint8_t opcodeSize;
         uint8_t modrm;
         uint8_t displacementSize;
         uint32_t displacement;
