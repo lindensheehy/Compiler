@@ -190,9 +190,12 @@ const InstructionSignature* matchInstruction(const Instruction& instruction) {
 // Assembles the instruction data from 'instruction' into 'instructionBytes'. Returns true on a failiure
 bool assembleInstruction(const Instruction& instruction, InstructionBytes* instructionBytesOut) {
 
+    memset(instructionBytesOut, 0, sizeof(InstructionBytes));
+    constexpr size_t MAX_OPERAND_COUNT = (sizeof(InstructionSignature::operands) / sizeof(SignatureOperandType));
+    
     const InstructionSignature* match = matchInstruction(instruction);
     if (match == nullptr) return true;
-
+    
     // Opcode
     {
         memcpy(
@@ -222,29 +225,24 @@ bool assembleInstruction(const Instruction& instruction, InstructionBytes* instr
 
     // ModR/M byte
     {
-        bool needModrmByte;
-        switch (match->mode) {
+        uint8_t mode = static_cast<uint8_t>(match->mode);
 
-            case Mode::SLASH_0:
-            case Mode::SLASH_1:
-            case Mode::SLASH_2:
-            case Mode::SLASH_3:
-            case Mode::SLASH_4:
-            case Mode::SLASH_5:
-            case Mode::SLASH_6:
-            case Mode::SLASH_7:
-            case Mode::SLASH_8:
-            case Mode::SLASH_9:
-            case Mode::SLASH_R:
-            needModrmByte = true;
-                break;
+        // mode in [9, 10] (PLUS_RD, NONE)
+        if (mode >= static_cast<uint8_t>(Mode::PLUS_RD)) goto END_MODRM;
+        
+        // mode is /digit
+        if (mode < static_cast<uint8_t>(Mode::SLASH_R)) {
+            instructionBytesOut->modrm |= ((mode << 3) & 0b00111000);
+        }
 
-            default:
-                needModrmByte = false;
-                break;
-
+        // mode == 8 (SLASH_R)
+        else {
+            for (int i = 0; i < MAX_OPERAND_COUNT; i++) {
+                
+            }
         }
     }
+    END_MODRM:
 
     // Displacement
     {

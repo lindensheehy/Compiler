@@ -37,7 +37,7 @@ enum class Immediate : uint8_t {
 
 enum class Mode : uint8_t {
 
-    NONE = 12,
+    NONE = 10,
 
     SLASH_0 = 0,
     SLASH_1 = 1,
@@ -47,11 +47,9 @@ enum class Mode : uint8_t {
     SLASH_5 = 5,
     SLASH_6 = 6,
     SLASH_7 = 7,
-    SLASH_8 = 8,
-    SLASH_9 = 9,
-    SLASH_R = 10,
+    SLASH_R = 8,
 
-    PLUS_RD = 11,
+    PLUS_RD = 9,
     
 };
 
