@@ -2,32 +2,7 @@
 #include <cstdlib>
 #include <string_view>
 #include <vector>
-// --- From Lexer (Should be in a shared header) ---
-//TBD! Re-do the code, this is PLACEHOLDER code.
-enum class TokenType {
-    // Punctuation
-    LEFT_PAREN, RIGHT_PAREN, LEFT_BRACE, RIGHT_BRACE, COMMA, SEMICOLON, NEW_LINE,
-    // Operators
-    EQUAL, PLUS, MINUS, STAR, SLASH, EQUAL_EQUAL, NOT_EQUAL, PLUS_EQUAL,
-    // Literals
-    IDENTIFIER, STRING, NUMBER,
-    // Keywords
-    INT, RETURN, IF, ELSE, WHILE, FOR, PRINT,
-    // Special
-    END_OF_FILE,
-};
-
-struct Token {
-    TokenType type;
-    const uint8_t* start;
-    size_t length;
-};
-
-struct TokenBuffer {
-    Token* data;
-    size_t size;
-    size_t capacity;
-};
+#include "lexer/lexer.h"
 
 // --- Abstract Syntax Tree (AST) Node Definitions ---
 // (These would typically go in parser.h)
@@ -111,7 +86,7 @@ Token current_token(Parser* p) {
 }
 
 bool is_at_end(Parser* p) {
-    return current_token(p).type == TokenType::END_OF_FILE;
+    return current_token(p).token == TokenType::END_OF_FILE;
 }
 
 Token advance(Parser* p) {
@@ -125,7 +100,7 @@ Token advance(Parser* p) {
 // Returns true on success, false on failure (syntax error).
 bool match(Parser* p, TokenType type) {
     if (is_at_end(p)) return false;
-    if (current_token(p).type == type) {
+    if (current_token(p).token == type) {
         advance(p);
         return true;
     }
@@ -173,7 +148,7 @@ AstNode* parse_factor(Parser* p) {
 AstNode* parse_term(Parser* p) {
     AstNode* left = parse_factor(p);
 
-    while (current_token(p).type == TokenType::STAR || current_token(p).type == TokenType::SLASH) {
+    while (current_token(p).token == TokenType::STAR || current_token(p).token == TokenType::SLASH) {
         Token op_token = advance(p);
         AstNode* right = parse_factor(p);
 
@@ -181,7 +156,7 @@ AstNode* parse_term(Parser* p) {
         node->base.type = AstNodeType::BINARY_OPERATION;
         node->left = left;
         node->right = right;
-        node->op = op_token.type;
+        node->op = op_token.token;
         left = (AstNode*)node;
     }
 
@@ -192,7 +167,7 @@ AstNode* parse_term(Parser* p) {
 AstNode* parse_expression(Parser* p) {
     AstNode* left = parse_term(p);
 
-    while (current_token(p).type == TokenType::PLUS || current_token(p).type == TokenType::MINUS) {
+    while (current_token(p).token == TokenType::PLUS || current_token(p).token == TokenType::MINUS) {
         Token op_token = advance(p);
         AstNode* right = parse_term(p);
 
@@ -200,7 +175,7 @@ AstNode* parse_expression(Parser* p) {
         node->base.type = AstNodeType::BINARY_OPERATION;
         node->left = left;
         node->right = right;
-        node->op = op_token.type;
+        node->op = op_token.token;
         left = (AstNode*)node;
     }
 
