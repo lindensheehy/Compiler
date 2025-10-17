@@ -203,6 +203,7 @@ bool assembleInstruction(const Instruction& instruction, InstructionBytes* instr
             &(match->opcode), 
             std::min(sizeof(match->opcode), static_cast<size_t>(match->opcodeBytesLength))
         );
+        instructionBytesOut->opcodeSize = match->opcodeBytesLength;
 
         if (match->mode == Mode::PLUS_RD) {
             
@@ -227,20 +228,99 @@ bool assembleInstruction(const Instruction& instruction, InstructionBytes* instr
     {
         uint8_t mode = static_cast<uint8_t>(match->mode);
 
-        // mode in [9, 10] (PLUS_RD, NONE)
-        if (mode >= static_cast<uint8_t>(Mode::PLUS_RD)) goto END_MODRM;
-        
-        // mode is /digit
-        if (mode < static_cast<uint8_t>(Mode::SLASH_R)) {
-            instructionBytesOut->modrm |= ((mode << 3) & 0b00111000);
-        }
+        // reg field
+        {
+            // mode in [9, 10] (PLUS_RD, NONE)
+            if (mode >= static_cast<uint8_t>(Mode::PLUS_RD)) goto END_MODRM;
+            
+            // mode is /digit
+            if (mode < static_cast<uint8_t>(Mode::SLASH_R)) {
+                instructionBytesOut->modrm |= ((mode << 3) & 0b00111000);
+            }
 
-        // mode == 8 (SLASH_R)
-        else {
-            for (int i = 0; i < MAX_OPERAND_COUNT; i++) {
-                
+            // mode == 8 (SLASH_R)
+            else {
+
+                int i = 0;
+                for (; i < MAX_OPERAND_COUNT; i++) {
+                    if (match->operands[i] == SignatureOperandType::R32) break;
+                }
+
+                if (instruction.operands[i].type != OperandType::REGISTER) return 1;
+                uint8_t registerValue = static_cast<uint8_t>(instruction.operands[i].reg);
+                instructionBytesOut->modrm |= ((registerValue << 3) & 0b00111000);
+
             }
         }
+
+        // mode and r/m fields
+        {
+            int i = 0;
+            for (; i < MAX_OPERAND_COUNT; i++) {
+                if (match->operands[i] == SignatureOperandType::RM32) break;
+            }
+
+            switch (instruction.operands[i].type) {
+                
+                case OperandType::IMMEDIATE:
+                    return 1;
+
+                case OperandType::REGISTER: {
+
+                    instructionBytesOut->modrm |= (0b11000000);
+
+                    uint8_t registerValue = static_cast<uint8_t>(instruction.operands[i].reg);
+                    instructionBytesOut->modrm |= (registerValue & 0b00000111);
+
+                    break;
+
+                }
+
+                case OperandType::MEMORY: {
+
+                    uint8_t registerValue = static_cast<uint8_t>(instruction.operands[i].mem.reg);
+                    if (
+                        instruction.operands[i].mem.reg == Register::ESP || 
+                        instruction.operands[i].mem.reg == Register::EBP
+                    ) {
+                        // log specific error (these specific edge cases wont be handled for now)
+                        return 1;
+                    }
+                    
+                    instructionBytesOut->modrm |= (registerValue & 0b00000111);
+                    
+                    uint32_t displacementSize = instruction.operands[i].mem.offsetSize;
+                    switch (displacementSize) {
+
+                        case 0:
+                            instructionBytesOut->modrm |= (0b00000000);
+                            break;
+
+                        case 1:
+                            instructionBytesOut->modrm |= (0b01000000);
+                            break;
+
+                        case 4:
+                            instructionBytesOut->modrm |= (0b10000000);
+                            break;
+
+                        default:
+                            // log specific error
+                            break;
+
+                    }
+
+                    break;
+
+                }
+
+                default:
+                    return 1;
+
+            }
+
+        }
+
     }
     END_MODRM:
 
