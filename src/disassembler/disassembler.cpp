@@ -9,6 +9,9 @@
 
 using namespace Disassembler;
 
+// Forward declaration
+size_t writeImmediate(uint8_t* fileData, size_t startIndex, uint8_t* writeBuffer, size_t* writeBufferLength);
+
 
 // Writes an opcode label into the writeBuffer based on the char code passed
 size_t writeOpcode(uint8_t opcode, uint8_t* writeBuffer, size_t* writeBufferLength) {

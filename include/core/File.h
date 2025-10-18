@@ -1,5 +1,7 @@
 #pragma once
 
+#include <windows.h>
+
 #include <cstdint>
 #include <cstddef>
 
@@ -28,18 +30,15 @@ class File {
         // Appends 'writeBufferLength' bytes from 'writeBuffer' into the file.
         void write(const uint8_t* bufferIn, size_t length);
 
-        // Truncates the file to size 0. Ie, clears the contents of the file.
-        void truncate();
+        // Appends 'message' to the file with an optional newline terminator
+        void write(const char* message, bool newLine = false);
 
-        // Returns the size of the file in bytes
-        uintmax_t getSize();
+        // Truncates the file to size 0. Ie, clears the contents of the file.
+        void clear();
 
     private:
 
         // The file descriptor (owned by this class)
-        int f;
-
-        // Size of the file in bytes
-        uintmax_t size;
+        HANDLE hFile = nullptr;
 
 };

@@ -1,62 +1,24 @@
 #include "core/File.h"
 
-
-#if defined(_WIN32) || defined(_WIN64)
-    #define ON_WINDOWS 1
-#else
-    #define ON_WINDOWS 0
-#endif
-
-#if defined(__unix__) || defined(__APPLE__) || defined(__MACH__)
-    #define ON_UNIX 1
-#else
-    #define ON_UNIX 0
-#endif
-
-#include <fcntl.h>
-#include <sys/stat.h>
 #include <iostream>
 
     
-File::File(const char* path) : f(-1), size(0) {
+File::File(const char* path) : hFile(INVALID_HANDLE_VALUE) {
+    
+    // Get handle to file
+    this->hFile = CreateFile(
+        path,                           // File name
+        GENERIC_READ | GENERIC_WRITE,   // Desired access: read and write
+        FILE_SHARE_READ,                // Share mode: allow other processes to read
+        NULL,                           // Security attributes
+        CREATE_ALWAYS,                  // Creation disposition: Create new file if none exists, otherwise overwrite existing file with empty file
+        FILE_ATTRIBUTE_NORMAL,          // Flags and attributes
+        NULL                            // Template file handle
+    );
 
-    #if ON_WINDOWS
-
-        this->f = _open(path, _O_RDWR | _O_BINARY | _O_CREAT, 0666);
-        
-        if (this->f == -1) {
-            std::cout << "Warning: File \"" << path << "\" failed to instantiate!" << std::endl;
-            return;
-        }
-
-        struct _stat st;
-        if (_fstat(this->f, &st)) {
-            this->size = 0;
-            return;
-        }
-        
-        size = st.st_size;
-
-    #endif
-
-    #if ON_UNIX
-
-        this->f = open(path, O_RDWR | O_CREAT, 0666);
-
-        if (this->f == -1) {
-            std::cout << "Warning: File \"" << path << "\" failed to instantiate!" << std::endl;
-            return;
-        }
-
-        struct stat st;
-        if (fstat(this->f, &st)) {
-            this->size = 0;
-            return;
-        }
-        
-        size = st.st_size;
-
-    #endif
+    if (this->hFile == INVALID_HANDLE_VALUE) {
+        std::cout << "Warning: File \"" << path << "\" failed to instantiate!" << std::endl;
+    }
 
     return;
     
@@ -64,109 +26,64 @@ File::File(const char* path) : f(-1), size(0) {
 
 File::~File() {
 
-    if (this->f != -1) {
-
-        #if ON_WINDOWS
-            _close(this->f);
-        #endif
-        
-        #if ON_UNIX
-            close(this->f);
-        #endif
-
-    }
+    if (this->hFile != INVALID_HANDLE_VALUE) CloseHandle(this->hFile);
 
     return;
+
 }
 
 uint8_t* File::read() {
 
-    if (this->f == -1) return nullptr;
+    if (this->hFile == INVALID_HANDLE_VALUE) return nullptr;
 
-    uint8_t* buf = new uint8_t[size];
-    if (!buf) return nullptr;
+    // stub
 
-    #if ON_WINDOWS
-        _lseek(this->f, 0, SEEK_SET);
-    #endif
-
-    #if ON_UNIX
-        lseek(this->f, 0, SEEK_SET);
-    #endif
-
-    size_t totalRead = 0;
-    while (totalRead < size) {
-
-        #if ON_WINDOWS
-            int n = _read(this->f, buf + totalRead, (unsigned int)(size - totalRead));
-        #endif
-
-        #if ON_UNIX
-            ssize_t n = ::read(this->f, buf + totalRead, size - totalRead);
-        #endif
-
-        if (n <= 0) {
-            delete[] buf;
-            return nullptr;
-        }
-        totalRead += n;
-
-    }
-
-    return buf;
+    return nullptr;
 
 }
 
 void File::write(const uint8_t* bufferIn, size_t length) {
 
-    if (this->f == -1 || !bufferIn) return;
+    if (this->hFile == INVALID_HANDLE_VALUE) return;
+    if (bufferIn == nullptr) return;
 
-    size_t totalWritten = 0;
-    while (totalWritten < length) {
+    DWORD bytesWritten;
+    WriteFile(this->hFile, bufferIn, length, &bytesWritten, NULL);
 
-        #if ON_WINDOWS
-            int n = _write(this->f, bufferIn + totalWritten, (unsigned int)(length - totalWritten));
-        #endif
-
-        #if ON_UNIX
-            ssize_t n = ::write(this->f, bufferIn + totalWritten, length - totalWritten);
-        #endif
-
-        if (n <= 0) {
-            std::cout << "Error: File:write failed to write all bytes!" << std::endl;
-            return;
-        }
-        totalWritten += n;
-
+    if (bytesWritten != length) {
+        std::cout << "Warning: File::write failed to write all the requested bytes!" << std::endl;
     }
-
-    this->size += length;
 
     return;
 
 }
 
-void File::truncate() {
+void File::write(const char* message, bool newLine) {
 
-    if (this->f == -1) {
-        std::cout << "Warning: File::truncate called on invalid File instance!" << std::endl;
-        return;
+    if (this->hFile == INVALID_HANDLE_VALUE) return;
+    if (message == nullptr) return;
+
+    DWORD bytesWritten;
+    WriteFile(this->hFile, message, strlen(message), &bytesWritten, NULL);
+    
+    if (newLine) {
+        WriteFile(this->hFile, "\r\n", 2, &bytesWritten, NULL);
     }
-
-    #if ON_WINDOWS
-        _chsize_s(this->f, 0);
-    #endif
-
-    #if ON_UNIX
-        ftruncate(this->f, 0);
-    #endif
-
-    this->size = 0;
 
     return;
 
 }
 
-uintmax_t File::getSize() {
-    return this->size;
+void File::clear() {
+
+    if (this->hFile == INVALID_HANDLE_VALUE) return;
+
+    // Move the file pointer to the start of the file
+    SetFilePointer(this->hFile, 0, NULL, FILE_BEGIN);
+
+    // Truncates anything past the file pointer, so everything
+    SetEndOfFile(this->hFile);
+
+    return;
+
 }

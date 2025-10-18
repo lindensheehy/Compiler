@@ -241,7 +241,7 @@ bool assembleInstruction(const Instruction& instruction, InstructionBytes* instr
             // mode == 8 (SLASH_R)
             else {
 
-                int i = 0;
+                size_t i = 0;
                 for (; i < MAX_OPERAND_COUNT; i++) {
                     if (match->operands[i] == SignatureOperandType::R32) break;
                 }
@@ -255,7 +255,7 @@ bool assembleInstruction(const Instruction& instruction, InstructionBytes* instr
 
         // mode and r/m fields
         {
-            int i = 0;
+            size_t i = 0;
             for (; i < MAX_OPERAND_COUNT; i++) {
                 if (match->operands[i] == SignatureOperandType::RM32) break;
             }

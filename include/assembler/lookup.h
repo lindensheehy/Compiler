@@ -2,6 +2,9 @@
 
 #include "assembler/data.h"
 
+#include <cstddef>
+
+
 namespace Assembler {
 
 enum class SignatureOperandType : uint8_t {
