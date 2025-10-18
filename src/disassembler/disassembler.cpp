@@ -30,7 +30,7 @@ size_t writeOpcode(uint8_t opcode, uint8_t* writeBuffer, size_t* writeBufferLeng
 
 // Writes a register label into the writeBuffer based on the char code passed
 size_t writeRegister(uint8_t reg, uint8_t* writeBuffer, size_t* writeBufferLength) {
-    
+
     size_t strLength;
     const char* str = getRegister(reg, &strLength);
 

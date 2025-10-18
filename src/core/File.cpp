@@ -3,7 +3,7 @@
 #include <iostream>
 
     
-File::File(const char* path) : hFile(INVALID_HANDLE_VALUE) {
+File::File(const char* path) : hFile(INVALID_HANDLE_VALUE), size(INVALID_FILE_SIZE) {
     
     // Get handle to file
     this->hFile = CreateFile(
@@ -18,6 +18,15 @@ File::File(const char* path) : hFile(INVALID_HANDLE_VALUE) {
 
     if (this->hFile == INVALID_HANDLE_VALUE) {
         std::cout << "Warning: File \"" << path << "\" failed to instantiate!" << std::endl;
+        std::cout << " >> Could not open the file." << std::endl;
+    }
+
+    this->size = GetFileSize(this->hFile, NULL);
+    if (this->size == INVALID_FILE_SIZE) {
+        std::cout << "Warning: File \"" << path << "\" failed to instantiate!" << std::endl;
+        std::cout << " >> Could not get the length of the file." << std::endl;
+        CloseHandle(this->hFile);
+        return;
     }
 
     return;
@@ -32,13 +41,36 @@ File::~File() {
 
 }
 
-uint8_t* File::read() {
+uint8_t* File::read(NullTerminate nullTerminate) {
 
     if (this->hFile == INVALID_HANDLE_VALUE) return nullptr;
 
-    // stub
+    DWORD bufferSize = this->size;
+    if (nullTerminate == NullTerminate::YES) bufferSize++;
+    uint8_t* buffer = new uint8_t[bufferSize];
+   
+    SetFilePointer(this->hFile, 0, NULL, FILE_BEGIN);
 
-    return nullptr;
+    DWORD bytesRead;
+    BOOL success = ReadFile(this->hFile, buffer, this->size, &bytesRead, NULL);
+
+    if (!success) {
+        std::cout << "Warning: Failed to read file!" << std::endl;
+        std::cout << " >> Error Code: " << GetLastError() << std::endl;
+        delete[] buffer;
+        return nullptr;
+    }
+
+    if (bytesRead != this->size) {
+        std::cout << "Warning: Failed to read file!" << std::endl;
+        std::cout << " >> Tried to read " << this->size << " bytes but only read " << bytesRead << "!" << std::endl;
+        delete[] buffer;
+        return nullptr;
+    }
+
+    if (nullTerminate == NullTerminate::YES) buffer[this->size] = '\0';
+
+    return buffer;
 
 }
 
@@ -54,6 +86,8 @@ void File::write(const uint8_t* bufferIn, size_t length) {
         std::cout << "Warning: File::write failed to write all the requested bytes!" << std::endl;
     }
 
+    this->size += length;
+
     return;
 
 }
@@ -64,11 +98,15 @@ void File::write(const char* message, bool newLine) {
     if (message == nullptr) return;
 
     DWORD bytesWritten;
-    WriteFile(this->hFile, message, strlen(message), &bytesWritten, NULL);
+    size_t length = strlen(message);
+    WriteFile(this->hFile, message, length, &bytesWritten, NULL);
     
     if (newLine) {
         WriteFile(this->hFile, "\r\n", 2, &bytesWritten, NULL);
+        this->size += 2;
     }
+
+    this->size += length;
 
     return;
 

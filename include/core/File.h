@@ -6,6 +6,11 @@
 #include <cstddef>
 
 
+enum class NullTerminate : uint8_t {
+    NO = 0,
+    YES = 1,
+};
+
 class File {
 
     /*
@@ -25,7 +30,7 @@ class File {
         /*   Instance Functions   */
 
         // Returns a new array containing the contents of the file. Ownership is passed to the caller. Returns nullptr on fail.
-        uint8_t* read();
+        uint8_t* read(NullTerminate nullTerminate = NullTerminate::YES);
 
         // Appends 'writeBufferLength' bytes from 'writeBuffer' into the file.
         void write(const uint8_t* bufferIn, size_t length);
@@ -40,5 +45,8 @@ class File {
 
         // The file descriptor (owned by this class)
         HANDLE hFile = nullptr;
+
+        // The size of the file in bytes
+        DWORD size;
 
 };

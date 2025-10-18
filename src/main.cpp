@@ -26,12 +26,12 @@ void testing() {
 
                 Disassembler::ErrorCode errorCode = Disassembler::generateDisassemble(in, out);
                 if (static_cast<uint32_t>(errorCode)) {
-                    std::cout << "Dissassemble failed!" << std::endl;
+                    std::cout << "Assemble failed!" << std::endl;
                     std::cout << "Error Code: " << static_cast<uint32_t>(errorCode) << std::endl;
                 }
 
                 else {
-                    std::cout << "Disassembled " << in << " -> " << out << std::endl;
+                    std::cout << "Assembled " << in << " -> " << out << std::endl;
                 }
 
                 break;
@@ -60,20 +60,21 @@ void testing() {
             case '3': {
 
                 File f("logs/test.txt");
+                uint8_t* fileContents;
 
-                uint8_t* fileContents = f.read();
+                fileContents = f.read();
                 std::cout << "File Contents: " << std::endl;
                 std::cout << fileContents << std::endl;
                 delete[] fileContents;
 
-                f.truncate();
+                f.clear();
                 std::cout << "Truncated file contents" << std::endl;
 
                 const char* s = "test";
                 f.write(reinterpret_cast<const uint8_t*>(s), strlen(s));
                 std::cout << "Wrote text to the file" << std::endl;
 
-                uint8_t* fileContents = f.read();
+                fileContents = f.read();
                 std::cout << "File Contents: " << std::endl;
                 std::cout << fileContents << std::endl;
                 delete[] fileContents;
