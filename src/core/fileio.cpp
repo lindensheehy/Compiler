@@ -5,7 +5,7 @@
 
 uint8_t* readFile(const char* fileName) {
 
-    size_t file_length;
+    std::uintmax_t file_length;
     bool file_length_found = getFileLength(fileName, &file_length);
     if (file_length_found) return nullptr;
     if (file_length == 0) return nullptr;
