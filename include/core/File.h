@@ -14,7 +14,9 @@ enum class NullTerminate : uint8_t {
 class File {
 
     /*
-        This class wraps a std::FILE type
+        A class-ified version of fileio.h
+        It does all the same things, but it does repeat OS calls unecessarily
+        Use this when you want to perform many reads/writes with less overhead
     */
 
     public:
