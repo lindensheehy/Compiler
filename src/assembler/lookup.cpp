@@ -3,7 +3,7 @@
 using namespace Assembler;
 
 
-bool Assembler::operandIs(const Operand& operand, SignatureOperandType signatureOperandType) {
+bool Assembler::operandIs(const Operand& operand, SignatureOperandType signatureOperandType, File* log) {
 
     switch (operand.type) {
 
@@ -92,10 +92,60 @@ bool Assembler::operandIs(const Operand& operand, SignatureOperandType signature
         }
 
         default: {
-            // log error
+            
+            if (log != nullptr) {
+                log->write("Assembler::operandIs() failed to match 'operand.type' to any known type!", true);
+                log->write(" >> Found type ");
+                log->write(static_cast<int>(operand.type));
+                log->write(".", true);
+            }
+
             return false;
+
         }
 
     }
+
+}
+
+const InstructionSignature* matchInstruction(const Instruction& instruction, File* log) {
+
+    const InstructionSignature* matchFound = nullptr;
+
+    bool successfulMatch;
+
+    for (size_t i = 0; i < lookupLength; i++) {
+
+        if (instruction.opcode != lookup[i].opcode) continue;
+
+        successfulMatch = true;
+
+        for (size_t j = 0; j < 3; j++) {
+
+            if (j >= instruction.operandCount) {
+                if (lookup[i].operands[j] != SignatureOperandType::NONE) {
+                    successfulMatch = false;
+                    break;
+                }
+                continue;
+            }
+
+            if (!operandIs(instruction.operands[j], lookup[i].operands[j], log)) {
+                successfulMatch = false;
+                break;
+            }
+
+        }
+
+        if (successfulMatch) {
+            if (matchFound == nullptr || lookup[i].preference < matchFound->preference) {
+                matchFound = &(lookup[i]);
+                if (matchFound->preference == 1) return matchFound;
+            }
+        }
+
+    }
+
+    return matchFound;
 
 }

@@ -1,6 +1,7 @@
 #pragma once
 
 #include "assembler/data.h"
+#include "core/File.h"
 
 #include <cstddef>
 
@@ -563,6 +564,10 @@ constexpr InstructionSignature lookup[] = {
 };
 constexpr size_t lookupLength = sizeof(lookup) / sizeof(InstructionSignature);
 
-bool operandIs(const Operand& operand, SignatureOperandType signatureOperandType);
+// Returns true if 'operand' falls into the category defined by 'signatureOperandType'
+bool operandIs(const Operand& operand, SignatureOperandType signatureOperandType, File* log = nullptr);
+
+// Returns a pointer to the InstructionSignature that best fits the Instruction. Returns nullptr if none match
+const InstructionSignature* matchInstruction(const Instruction& instruction, File* log = nullptr);
 
 }

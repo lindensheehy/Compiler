@@ -1,7 +1,7 @@
 #include "assembler/assembler.h"
 
 #include "assembler/lookup.h"
-#include "core/fileio.h"
+#include "core/File.h"
 
 #include <cstdio>
 #include <string.h>
@@ -11,7 +11,7 @@ using namespace Assembler;
 
 
 // Writes an opcode label into 'instruction'
-size_t handleOpcode(uint8_t opcode, Instruction* instruction) {
+size_t handleOpcode(uint8_t opcode, Instruction* instruction, File* log) {
 
     instruction->opcode = static_cast<Opcode>(opcode);
 
@@ -20,7 +20,7 @@ size_t handleOpcode(uint8_t opcode, Instruction* instruction) {
 }
 
 // Writes a register label into 'instruction'
-size_t handleRegister(uint8_t reg, Instruction* instruction) {
+size_t handleRegister(uint8_t reg, Instruction* instruction, File* log) {
 
     size_t insertionIndex = instruction->operandCount;
 
@@ -35,7 +35,7 @@ size_t handleRegister(uint8_t reg, Instruction* instruction) {
 }
 
 // Writes a memory reference label into 'instruction'
-size_t handleMemory(uint8_t* fileData, size_t startIndex, Instruction* instruction) {
+size_t handleMemory(uint8_t* fileData, size_t startIndex, Instruction* instruction, File* log) {
 
     size_t insertionIndex = instruction->operandCount;
 
@@ -76,8 +76,16 @@ size_t handleMemory(uint8_t* fileData, size_t startIndex, Instruction* instructi
         }
 
         default: {
-            // log error case
+            
+            log->write("Error: Found an invalid memory offset length character!", true);
+            log->write(" >> Found character \'");
+            log->write(static_cast<char>(fileData[startIndex + 1]));
+            log->write("\' (int value ");
+            log->write(static_cast<char>(fileData[startIndex + 1]), false, WriteFormat::DECIMAL);
+            log->write("), which does not match any known length character.", true);
+
             break;
+
         }
 
     }
@@ -89,7 +97,7 @@ size_t handleMemory(uint8_t* fileData, size_t startIndex, Instruction* instructi
 }
 
 // Writes an immediate value label into 'instruction'
-size_t handleImmediate(uint8_t* fileData, size_t startIndex, Instruction* instruction) {
+size_t handleImmediate(uint8_t* fileData, size_t startIndex, Instruction* instruction, File* log) {
 
     size_t insertionIndex = instruction->operandCount;
 
@@ -132,8 +140,18 @@ size_t handleImmediate(uint8_t* fileData, size_t startIndex, Instruction* instru
         }
 
         default: {
-            // log error case
+            
+            log->write("Error: Found an invalid immediate length character!", true);
+            log->write(" >> Found character \'");
+            log->write(static_cast<char>(fileData[startIndex]));
+            log->write("\' (int value ");
+            log->write(static_cast<char>(fileData[startIndex]), false, WriteFormat::DECIMAL);
+            log->write("), which does not match any known length character.", true);
+
+            consumed = 1;
+
             break;
+
         }
 
     }
@@ -144,57 +162,17 @@ size_t handleImmediate(uint8_t* fileData, size_t startIndex, Instruction* instru
 
 }
 
-// Returns a pointer to the InstructionSignature that best fits the Instruction. Returns nullptr if none match
-const InstructionSignature* matchInstruction(const Instruction& instruction) {
-
-    const InstructionSignature* matchFound = nullptr;
-
-    bool successfulMatch;
-
-    for (size_t i = 0; i < lookupLength; i++) {
-
-        if (instruction.opcode != lookup[i].opcode) continue;
-
-        successfulMatch = true;
-
-        for (size_t j = 0; j < 3; j++) {
-
-            if (j >= instruction.operandCount) {
-                if (lookup[i].operands[j] != SignatureOperandType::NONE) {
-                    successfulMatch = false;
-                    break;
-                }
-                continue;
-            }
-
-            if (!operandIs(instruction.operands[j], lookup[i].operands[j])) {
-                successfulMatch = false;
-                break;
-            }
-
-        }
-
-        if (successfulMatch) {
-            if (matchFound == nullptr || lookup[i].preference < matchFound->preference) {
-                matchFound = &(lookup[i]);
-                if (matchFound->preference == 1) return matchFound;
-            }
-        }
-
-    }
-
-    return matchFound;
-
-}
-
 // Assembles the instruction data from 'instruction' into 'instructionBytes'. Returns true on a failiure
-bool assembleInstruction(const Instruction& instruction, InstructionBytes* instructionBytesOut) {
+bool assembleInstruction(const Instruction& instruction, InstructionBytes* instructionBytesOut, File* log) {
 
     memset(instructionBytesOut, 0, sizeof(InstructionBytes));
     constexpr size_t MAX_OPERAND_COUNT = (sizeof(InstructionSignature::operands) / sizeof(SignatureOperandType));
     
     const InstructionSignature* match = matchInstruction(instruction);
-    if (match == nullptr) return true;
+    if (match == nullptr) {
+        log->write("Error: assembleInstruction was unable to match the given instruction to any known signature!", true);
+        return true;
+    }
     
     // Opcode
     {
@@ -216,7 +194,10 @@ bool assembleInstruction(const Instruction& instruction, InstructionBytes* instr
                 }
             }
 
-            if (reg == Register::NONE) return true;
+            if (reg == Register::NONE) {
+                log->write("Error: assembleInstruction could not find a REGISTER operand type in an instruction with Mode::PLUS_RD (+rd)!", true);
+                return true;
+            }
 
             uint8_t writeIndex = std::min(sizeof(instructionBytesOut->opcode) - 1, static_cast<size_t>(instructionBytesOut->opcodeSize - 1));
             instructionBytesOut->opcode[writeIndex] += static_cast<uint8_t>(reg);
@@ -246,7 +227,17 @@ bool assembleInstruction(const Instruction& instruction, InstructionBytes* instr
                     if (match->operands[i] == SignatureOperandType::R32) break;
                 }
 
-                if (instruction.operands[i].type != OperandType::REGISTER) return 1;
+                if (instruction.operands[i].type != OperandType::REGISTER) {
+                    
+                    log->write("Error: assembleInstruction found an invalid operand type where it expected a REGISTER type!", true);
+                    log->write(" >> Found type ");
+                    log->write(static_cast<int>(instruction.operands[i].type));
+                    log->write(".", true);
+
+                    return true;
+                
+                }
+
                 uint8_t registerValue = static_cast<uint8_t>(instruction.operands[i].reg);
                 instructionBytesOut->modrm |= ((registerValue << 3) & 0b00111000);
 
@@ -262,8 +253,10 @@ bool assembleInstruction(const Instruction& instruction, InstructionBytes* instr
 
             switch (instruction.operands[i].type) {
                 
-                case OperandType::IMMEDIATE:
-                    return 1;
+                case OperandType::IMMEDIATE: {
+                    log->write("Error: assembleInstruction found an IMMEDIATE operand type where it expected a REGISTER or MEMORY type!", true);
+                    return true;
+                }
 
                 case OperandType::REGISTER: {
 
@@ -279,12 +272,19 @@ bool assembleInstruction(const Instruction& instruction, InstructionBytes* instr
                 case OperandType::MEMORY: {
 
                     uint8_t registerValue = static_cast<uint8_t>(instruction.operands[i].mem.reg);
+                    
+                    // This case is valid as per x86 documentation, its just out of the current scope of this project
+                    // Both of these register values indicate special cases that require extra handling
                     if (
                         instruction.operands[i].mem.reg == Register::ESP || 
                         instruction.operands[i].mem.reg == Register::EBP
                     ) {
-                        // log specific error (these specific edge cases wont be handled for now)
-                        return 1;
+                        
+                        log->write("Error: assembleInstruction found an illegal register value for the memory field in the modr/m byte!", true);
+                        log->write(" >> The instruction is using either ESP or EBP as the base register in a memory operand, which is currently not allowed.", true);
+
+                        return true;
+                    
                     }
                     
                     instructionBytesOut->modrm |= (registerValue & 0b00000111);
@@ -304,9 +304,16 @@ bool assembleInstruction(const Instruction& instruction, InstructionBytes* instr
                             instructionBytesOut->modrm |= (0b10000000);
                             break;
 
-                        default:
-                            // log specific error
-                            break;
+                        default: {
+
+                            log->write("Error: assembleInstruction found an invalid memory offset length for the memory field in the modr/m byte!", true);
+                            log->write(" >> Found length ");
+                            log->write(static_cast<int>(displacementSize));
+                            log->write(".", true);
+
+                            return true;
+
+                        }
 
                     }
 
@@ -314,8 +321,16 @@ bool assembleInstruction(const Instruction& instruction, InstructionBytes* instr
 
                 }
 
-                default:
-                    return 1;
+                default: {
+                    
+                    log->write("Error: assembleInstruction found an unknown operand type where it expected a REGISTER or MEMORY type!", true);
+                    log->write(" >> Found type ");
+                    log->write(static_cast<int>(instruction.operands[i].type));
+                    log->write(".", true);
+
+                    return true;
+
+                }
 
             }
 
@@ -326,7 +341,7 @@ bool assembleInstruction(const Instruction& instruction, InstructionBytes* instr
 
     // Displacement
     {
-        bool eligableForDisplacement = false;
+        bool eligibleForDisplacement = false;
         size_t onOperand;
         size_t range = (sizeof(match->operands) / sizeof(SignatureOperandType));
         for (size_t i = 0; i < range; i++) {
@@ -338,7 +353,7 @@ bool assembleInstruction(const Instruction& instruction, InstructionBytes* instr
 
                 case SignatureOperandType::RM32:
                 case SignatureOperandType::MEM:
-                    eligableForDisplacement = true;
+                    eligibleForDisplacement = true;
                     onOperand = i;
                     break;
 
@@ -348,7 +363,7 @@ bool assembleInstruction(const Instruction& instruction, InstructionBytes* instr
             }
         }
 
-        if (eligableForDisplacement) {
+        if (eligibleForDisplacement) {
             Operand focusOperand = instruction.operands[onOperand];
             instructionBytesOut->displacement = focusOperand.mem.offset;
             instructionBytesOut->displacementSize = focusOperand.mem.offsetSize;
@@ -357,7 +372,7 @@ bool assembleInstruction(const Instruction& instruction, InstructionBytes* instr
 
     // Immediate
     {
-        bool eligableForImmediate = false;
+        bool eligibleForImmediate = false;
         size_t onOperand;
         size_t range = (sizeof(match->operands) / sizeof(SignatureOperandType));
         for (size_t i = 0; i < range; i++) {
@@ -368,27 +383,53 @@ bool assembleInstruction(const Instruction& instruction, InstructionBytes* instr
             switch (match->operands[i]) {
 
                 case SignatureOperandType::IMM8:
-                    if (currentOperand->immediate.size > 1) return true;
+                    if (currentOperand->immediate.size > 1) {
+                        
+                        log->write("Error: assembleInstruction found an IMMEDIATE operand larger than the allowed size!", true);
+                        log->write(" >> The IMMEDIATE was size ", true);
+                        log->write(static_cast<int>(currentOperand->immediate.size));
+                        log->write(", but the signature expected size 1", true);
+
+                        return true;
+
+                    }
                     [[fallthrough]];
 
                 case SignatureOperandType::IMM16:
-                    if (currentOperand->immediate.size > 2) return true;
+                    if (currentOperand->immediate.size > 2) {
+                        
+                        log->write("Error: assembleInstruction found an IMMEDIATE operand larger than the allowed size!", true);
+                        log->write(" >> The IMMEDIATE was size ", true);
+                        log->write(static_cast<int>(currentOperand->immediate.size));
+                        log->write(", but the signature expected size 2", true);
+
+                        return true;
+
+                    }
                     [[fallthrough]];
 
                 case SignatureOperandType::IMM32: {
-                    eligableForImmediate = true;
+                    eligibleForImmediate = true;
                     onOperand = i;
                     break;
                 }
                 
-                default:
-                   return true;
+                default: {
+
+                    log->write("Error: assembleInstruction found an out of place IMMEDIATE operand type!", true);
+                    log->write(" >> The IMMEDIATE type appeared where the SignatureOperandType was ", true);
+                    log->write(static_cast<int>(match->operands[i]));
+                    log->write(".", true);
+
+                    return true;
+
+                }
 
             }
 
         }
 
-        if (eligableForImmediate) {
+        if (eligibleForImmediate) {
             instructionBytesOut->immediate = instruction.operands[onOperand].immediate.value;
             instructionBytesOut->immediateSize = instruction.operands[onOperand].immediate.size;
         }
@@ -399,7 +440,7 @@ bool assembleInstruction(const Instruction& instruction, InstructionBytes* instr
 }
 
 // Writes the IntructionBytes into the writeBuffer. Conditionally writes parts depending on the contents
-void writeInstruction(const InstructionBytes& instructionBytes, uint8_t* writeBuffer, size_t* writeBufferLength) {
+void writeInstruction(const InstructionBytes& instructionBytes, uint8_t* writeBuffer, size_t* writeBufferLength, File* log) {
 
     return;
 
@@ -407,12 +448,39 @@ void writeInstruction(const InstructionBytes& instructionBytes, uint8_t* writeBu
 
 ErrorCode Assembler::generateAssemble(const char* fileNameIn, const char* fileNameOut) {
 
-    uint8_t* file = readFile(fileNameIn);
+    File log("logs/assembler.log");
+    log.clear();
+
     size_t fileLength;
-    bool file_length_rc = getFileLength(fileNameIn, &fileLength);
-    if (!file_length_rc) {
-        return ErrorCode::INVALID_FILE;
+    uint8_t* file;
+
+    // The scope here lets fileIn be quickly destructed, since its an OS resource
+    {
+        File fileIn(fileNameIn);
+        fileLength = fileIn.getSize();
+        file = fileIn.read();
     }
+
+    if (fileLength == 0) {
+
+        log.write("Error: The file at 'fileNameIn' (\"");
+        log.write(fileNameIn);
+        log.write("\") is empty!", true);
+
+        return ErrorCode::INVALID_FILE;
+
+    }
+
+    if (file == nullptr) {
+
+        log.write("Error: Failed to read from 'fileNameIn' (\"");
+        log.write(fileNameIn);
+        log.write("\")!", true);
+
+        return ErrorCode::INVALID_FILE;
+
+    }
+
     constexpr size_t WRITE_BUFFER_SIZE = 65536;
     uint8_t* writeBuffer = new uint8_t[WRITE_BUFFER_SIZE] {0x00};
     size_t writeBufferLength = 0;
@@ -422,6 +490,9 @@ ErrorCode Assembler::generateAssemble(const char* fileNameIn, const char* fileNa
     Instruction instructionBuilder {};
     InstructionBytes instructionBytes {};
 
+    File fileOut(fileNameOut);
+    fileOut.clear();
+
     for (size_t i = 0; i < fileLength; i++) {
 
         switch (file[i]) {
@@ -429,61 +500,61 @@ ErrorCode Assembler::generateAssemble(const char* fileNameIn, const char* fileNa
             // Opcode
             case 'O': {
 
-                assembleInstruction(instructionBuilder, &instructionBytes);
-                writeInstruction(instructionBytes, writeBuffer, &writeBufferLength);
+                assembleInstruction(instructionBuilder, &instructionBytes, &log);
+                writeInstruction(instructionBytes, writeBuffer, &writeBufferLength, &log);
 
-                bytesConsumed = handleOpcode(file[i + 1], &instructionBuilder);
-                i += bytesConsumed;
-
+                bytesConsumed = handleOpcode(file[i + 1], &instructionBuilder, &log);
                 break;
 
             }
 
             // Register
             case 'R': {
-
-                bytesConsumed = handleRegister(file[i + 1], &instructionBuilder);
-                i += bytesConsumed;
-                
+                bytesConsumed = handleRegister(file[i + 1], &instructionBuilder, &log);
                 break;
-                
             }
 
             // Memory
             case 'M': {
-
-                bytesConsumed = handleMemory(file, i + 1, &instructionBuilder);
-                i += bytesConsumed;
-                
+                bytesConsumed = handleMemory(file, i + 1, &instructionBuilder, &log);
                 break;
-                
             }
 
             // Immediate
             case 'I': {
-
-                bytesConsumed = handleImmediate(file, i + 1, &instructionBuilder);
-                i += bytesConsumed;
-                
+                bytesConsumed = handleImmediate(file, i + 1, &instructionBuilder, &log);
                 break;
-                
             }
 
             default: {
+
+                log.write("Error: Found an invalid prefix character!", true);
+                log.write(" >> Found character \'");
+                log.write(static_cast<char>(file[i]));
+                log.write("\' (int value ");
+                log.write(static_cast<char>(file[i]), false, WriteFormat::DECIMAL);
+                log.write("), which does not match any known prefix.", true);
+
                 return ErrorCode::FOUND_INVALID_PREFIX;
+
             }
 
         }
 
+        i += bytesConsumed;
+
         if (writeBufferLength > WRITE_BUFFER_LIMIT) {
-            writeFile(fileNameOut, writeBuffer, writeBufferLength);
+            fileOut.write(writeBuffer, writeBufferLength);
             memset(writeBuffer, 0x00, WRITE_BUFFER_SIZE);
             writeBufferLength = 0;
         }
 
     }
 
-    writeFile(fileNameOut, writeBuffer, writeBufferLength);
+    assembleInstruction(instructionBuilder, &instructionBytes, &log);
+    writeInstruction(instructionBytes, writeBuffer, &writeBufferLength, &log);
+
+    fileOut.write(writeBuffer, writeBufferLength);
     delete[] writeBuffer;
     delete[] file;
 
