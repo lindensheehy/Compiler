@@ -1,7 +1,12 @@
 #include "assembler/assembler.h"
 
+// #define DEBUG_MODE
+
+#ifdef DEBUG_MODE
+    #include "assembler/logHelpers.h"
+#endif
+
 #include "assembler/lookup.h"
-#include "assembler/logHelpers.h"
 #include "core/File.h"
 
 #include <cstdio>
@@ -176,9 +181,11 @@ bool assembleInstruction(const Instruction& instruction, InstructionBytes* instr
         return true;
     }
 
-    log->write("Matched instruction to signature:", true);
-    logInstructionSignature(*match, log);
-    log->writeNewLine();
+    #ifdef DEBUG_MODE
+        log->write("Matched instruction to signature:", true);
+        logInstructionSignature(*match, log);
+        log->writeNewLine();
+    #endif
     
     // Opcode
     {
@@ -453,31 +460,39 @@ void writeInstruction(const InstructionBytes& instructionBytes, uint8_t* writeBu
     uint8_t* writePtr = writeBuffer + (*writeBufferLength);
 
     // Opcode
-    log->write("Writing opcode: ptr = ");
-    log->write(static_cast<int>((*writeBufferLength) + static_cast<long long>(writePtr - writeBuffer)), true);
+    #ifdef DEBUG_MODE
+        log->write("Writing opcode: ptr = ");
+        log->write(static_cast<int>((*writeBufferLength) + static_cast<long long>(writePtr - writeBuffer)), true);
+    #endif
     memcpy(writePtr, instructionBytes.opcode, instructionBytes.opcodeSize);
     writePtr += instructionBytes.opcodeSize;
 
     // ModR/M byte
     if (instructionBytes.hasModrmByte) {
-        log->write("Writing modrm: ptr = ");
-        log->write(static_cast<int>((*writeBufferLength) + static_cast<long long>(writePtr - writeBuffer)), true);
+        #ifdef DEBUG_MODE
+            log->write("Writing modrm: ptr = ");
+            log->write(static_cast<int>((*writeBufferLength) + static_cast<long long>(writePtr - writeBuffer)), true);
+        #endif
         (*writePtr) = instructionBytes.modrm;
         writePtr++;
     }
 
     // Displacement
     if (instructionBytes.displacementSize != 0) {
-        log->write("Writing displacement: ptr = ");
-        log->write(static_cast<int>((*writeBufferLength) + static_cast<long long>(writePtr - writeBuffer)), true);
+        #ifdef DEBUG_MODE
+            log->write("Writing displacement: ptr = ");
+            log->write(static_cast<int>((*writeBufferLength) + static_cast<long long>(writePtr - writeBuffer)), true);
+        #endif
         memcpy(writePtr, reinterpret_cast<const uint8_t*>(&(instructionBytes.displacement)), instructionBytes.displacementSize);
         writePtr += instructionBytes.displacementSize;
     }
 
     // Immediate
     if (instructionBytes.immediateSize != 0) {
-        log->write("Writing immediate: ptr = ");
-        log->write(static_cast<int>((*writeBufferLength) + static_cast<long long>(writePtr - writeBuffer)), true);
+        #ifdef DEBUG_MODE
+            log->write("Writing immediate: ptr = ");
+            log->write(static_cast<int>((*writeBufferLength) + static_cast<long long>(writePtr - writeBuffer)), true);
+        #endif
         memcpy(writePtr, reinterpret_cast<const uint8_t*>(&(instructionBytes.immediate)), instructionBytes.immediateSize);
         writePtr += instructionBytes.immediateSize;
     }
@@ -538,12 +553,14 @@ ErrorCode Assembler::generateAssemble(const char* fileNameIn, const char* fileNa
 
     for (size_t i = 0; i < fileLength; i++) {
 
-        log.write("On fileData[");
-        log.write(static_cast<long long>(i));
-        log.write("]:", true);
+        #ifdef DEBUG_MODE
+            log.write("On fileData[");
+            log.write(static_cast<long long>(i));
+            log.write("]:", true);
 
-        logInstruction(instructionBuilder, &log);
-        log.writeNewLine();
+            logInstruction(instructionBuilder, &log);
+            log.writeNewLine();
+        #endif
 
         switch (file[i]) {
             
