@@ -59,7 +59,8 @@ size_t writeMemory(uint8_t* fileData, size_t startIndex, uint8_t* writeBuffer, s
         static constexpr char padding[] = " + ";
         constexpr size_t paddingLen = sizeof(padding) - 1;
 
-        memcpy(writeBuffer + (*writeBufferLength), padding, paddingLen);
+        uint8_t* writePtr = writeBuffer + (*writeBufferLength);
+        memcpy(writePtr, padding, paddingLen);
         (*writeBufferLength) += paddingLen;
 
         writeImmediate(fileData, startIndex + 1, writeBuffer, writeBufferLength, log);
@@ -105,6 +106,8 @@ size_t writeImmediate(uint8_t* fileData, size_t startIndex, uint8_t* writeBuffer
     size_t deltaIndex;
     int written;
 
+    uint8_t* writePtr = writeBuffer + (*writeBufferLength);
+
     switch (fileData[startIndex]) {
 
         case '1': {
@@ -112,7 +115,7 @@ size_t writeImmediate(uint8_t* fileData, size_t startIndex, uint8_t* writeBuffer
             uint8_t value = fileData[startIndex + 1];
 
             const size_t writeSize = 5; // ex. "0x12\0"
-            written = std::snprintf(reinterpret_cast<char*>(writeBuffer), writeSize, "0x%X", value);
+            written = std::snprintf(reinterpret_cast<char*>(writePtr), writeSize, "0x%X", value);
 
             deltaIndex = 2; // '1' and the byte value
 
@@ -126,7 +129,7 @@ size_t writeImmediate(uint8_t* fileData, size_t startIndex, uint8_t* writeBuffer
             memcpy(&value, fileData + startIndex + 1, sizeof(uint32_t));
 
             const size_t writeSize = 11; // ex. "0x12345678\0"
-            written = std::snprintf(reinterpret_cast<char*>(writeBuffer), writeSize, "0x%X", value);
+            written = std::snprintf(reinterpret_cast<char*>(writePtr), writeSize, "0x%X", value);
 
             deltaIndex = 5; // '4' and the 4 byte value
 
@@ -264,6 +267,9 @@ ErrorCode Disassembler::generateDisassemble(const char* fileNameIn, const char* 
 
     initMaps();
 
+    File fileOut(fileNameOut);
+    fileOut.clear();
+
     for (size_t i = 0; i < fileLength; i++) {
 
         writePadding(lastPrefix, file[i], writeBuffer, &writeBufferLength, &log);
@@ -312,7 +318,7 @@ ErrorCode Disassembler::generateDisassemble(const char* fileNameIn, const char* 
         i += bytesConsumed;
 
         if (writeBufferLength > WRITE_BUFFER_LIMIT) {
-            writeFile(fileNameOut, writeBuffer, writeBufferLength);
+            fileOut.write(writeBuffer, writeBufferLength);
             memset(writeBuffer, 0x00, WRITE_BUFFER_SIZE);
             writeBufferLength = 0;
         }
@@ -321,7 +327,7 @@ ErrorCode Disassembler::generateDisassemble(const char* fileNameIn, const char* 
 
     }
 
-    writeFile(fileNameOut, writeBuffer, writeBufferLength);
+    fileOut.write(writeBuffer, writeBufferLength);
     delete[] writeBuffer;
     delete[] file;
 

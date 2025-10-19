@@ -1,6 +1,4 @@
-#include <cstdio>
 #include <iostream>
-#include <string.h>
 
 #include "disassembler/disassembler.h"
 #include "assembler/assembler.h"
@@ -24,6 +22,20 @@ void testing() {
 
                 const char* in = "intermediate/test.irbin";
                 const char* out = "out/test.asm";
+
+                {
+                    const uint8_t bytes[] = {
+                        0x4F, 0x15, 0x52, 0x03, 0x49, 0x34, 0x12, 0x34, 0x56, 0x78,     // mov ebx, 0x12345678
+                        0x4F, 0x00, 0x52, 0x01, 0x4D, 0x03, 0x31, 0x10,                 // add ecx, [ebx + 0x10]
+                        0x4F, 0x01, 0x52, 0x02, 0x4D, 0x01, 0x31, 0x20,                 // sub edx, [ecx + 0x20] (1-byte offset)
+                        0x4F, 0x09, 0x52, 0x00, 0x52, 0x03,                             // xor eax, ebx
+                        0x4F, 0x15, 0x52, 0x06, 0x4D, 0x07, 0x31, 0xFF                  // mov esi, [edi + 0xFF]
+                    };
+
+                    File f(in);
+                    f.clear();
+                    f.write(bytes, sizeof(bytes));
+                }
 
                 Disassembler::ErrorCode errorCode = Disassembler::generateDisassemble(in, out);
                 if (static_cast<uint32_t>(errorCode)) {

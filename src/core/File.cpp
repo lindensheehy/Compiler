@@ -13,7 +13,7 @@ File::File(const char* path) : hFile(INVALID_HANDLE_VALUE), size(INVALID_FILE_SI
         GENERIC_READ | GENERIC_WRITE,   // Desired access: read and write
         FILE_SHARE_READ,                // Share mode: allow other processes to read
         NULL,                           // Security attributes
-        CREATE_ALWAYS,                  // Creation disposition: Create new file if none exists, otherwise overwrite existing file with empty file
+        OPEN_ALWAYS,                    // Creation disposition: Create new file if none exists, otherwise overwrite existing file with empty file
         FILE_ATTRIBUTE_NORMAL,          // Flags and attributes
         NULL                            // Template file handle
     );
@@ -30,6 +30,8 @@ File::File(const char* path) : hFile(INVALID_HANDLE_VALUE), size(INVALID_FILE_SI
         CloseHandle(this->hFile);
         return;
     }
+
+    SetFilePointer(this->hFile, 0, NULL, FILE_END);
 
     this->stringBuffer = new char[File::STRING_BUFFER_SIZE];
 
