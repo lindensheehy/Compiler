@@ -11,6 +11,11 @@ enum class NullTerminate : uint8_t {
     YES = 1,
 };
 
+enum class WriteFormat : uint8_t {
+    TEXT,
+    DECIMAL,
+};
+
 class File {
 
     /*
@@ -34,14 +39,26 @@ class File {
         // Returns a new array containing the contents of the file. Ownership is passed to the caller. Returns nullptr on fail.
         uint8_t* read(NullTerminate nullTerminate = NullTerminate::YES);
 
+        // Truncates the file to size 0. Ie, clears the contents of the file.
+        void clear();
+        
+        // Returns the size of the file in bytes
+        DWORD getSize();
+
         // Appends 'writeBufferLength' bytes from 'writeBuffer' into the file.
         void write(const uint8_t* bufferIn, size_t length);
 
-        // Appends 'message' to the file with an optional newline terminator
+        // Appends 'message' to the file with an optional newline terminator (overloads for various types)
         void write(const char* message, bool newLine = false);
+        void write(char message, bool newLine, WriteFormat writeFormat = WriteFormat::TEXT);
+        void write(short message, bool newLine);
+        void write(int message, bool newLine);
+        void write(long long message, bool newLine);
+        void write(float message, bool newLine);
+        void write(double message, bool newLine);
 
-        // Truncates the file to size 0. Ie, clears the contents of the file.
-        void clear();
+        // New line only
+        void writeNewLine();
 
     private:
 
@@ -50,5 +67,9 @@ class File {
 
         // The size of the file in bytes
         DWORD size;
+
+        // Intermediate buffer for storing the results from ToString casts
+        char* stringBuffer;
+        static constexpr size_t STRING_BUFFER_SIZE = 64;
 
 };

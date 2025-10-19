@@ -1,8 +1,10 @@
 #include "core/File.h"
 
+#include "core/casting.h"
+
 #include <iostream>
 
-    
+
 File::File(const char* path) : hFile(INVALID_HANDLE_VALUE), size(INVALID_FILE_SIZE) {
     
     // Get handle to file
@@ -28,6 +30,8 @@ File::File(const char* path) : hFile(INVALID_HANDLE_VALUE), size(INVALID_FILE_SI
         CloseHandle(this->hFile);
         return;
     }
+
+    this->stringBuffer = new char[File::STRING_BUFFER_SIZE];
 
     return;
     
@@ -74,6 +78,24 @@ uint8_t* File::read(NullTerminate nullTerminate) {
 
 }
 
+void File::clear() {
+
+    if (this->hFile == INVALID_HANDLE_VALUE) return;
+
+    // Move the file pointer to the start of the file
+    SetFilePointer(this->hFile, 0, NULL, FILE_BEGIN);
+
+    // Truncates anything past the file pointer, so everything
+    SetEndOfFile(this->hFile);
+
+    return;
+
+}
+
+DWORD File::getSize() {
+    return this->size;
+}
+
 void File::write(const uint8_t* bufferIn, size_t length) {
 
     if (this->hFile == INVALID_HANDLE_VALUE) return;
@@ -112,16 +134,51 @@ void File::write(const char* message, bool newLine) {
 
 }
 
-void File::clear() {
+void File::write(char message, bool newLine, WriteFormat writeFormat) {
 
-    if (this->hFile == INVALID_HANDLE_VALUE) return;
+    switch (writeFormat) {
 
-    // Move the file pointer to the start of the file
-    SetFilePointer(this->hFile, 0, NULL, FILE_BEGIN);
+        case WriteFormat::TEXT: {
+            const char messageString[] = {message, '\0'};
+            this->write(messageString, newLine);
+            break;
+        }
 
-    // Truncates anything past the file pointer, so everything
-    SetEndOfFile(this->hFile);
+        case WriteFormat::DECIMAL: {
+            this->write(static_cast<long long>(message), newLine);
+            break;
+        }
+
+    }
 
     return;
+    
+}
 
+void File::write(short message, bool newLine) {
+    this->write(static_cast<long long>(message), newLine);
+}
+
+void File::write(int message, bool newLine) {
+    this->write(static_cast<long long>(message), newLine);
+}
+
+void File::write(long long message, bool newLine) {
+    intToString(message, this->stringBuffer, File::STRING_BUFFER_SIZE);
+    this->write(stringBuffer, newLine);
+}
+
+void File::write(float message, bool newLine) {
+    floatToString(message, this->stringBuffer, File::STRING_BUFFER_SIZE, 4);
+    this->write(this->stringBuffer, newLine);
+}
+
+void File::write(double message, bool newLine) {
+    doubleToString(message, this->stringBuffer, File::STRING_BUFFER_SIZE, 4);
+    this->write(this->stringBuffer, newLine);
+}
+
+// New line
+void File::writeNewLine() {
+    this->write("\n");
 }
