@@ -108,7 +108,7 @@ bool Assembler::operandIs(const Operand& operand, SignatureOperandType signature
 
 }
 
-const InstructionSignature* matchInstruction(const Instruction& instruction, File* log) {
+const InstructionSignature* Assembler::matchInstruction(const Instruction& instruction, File* log) {
 
     const InstructionSignature* matchFound = nullptr;
 

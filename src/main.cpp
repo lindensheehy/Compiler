@@ -27,12 +27,12 @@ void testing() {
 
                 Disassembler::ErrorCode errorCode = Disassembler::generateDisassemble(in, out);
                 if (static_cast<uint32_t>(errorCode)) {
-                    std::cout << "Assemble failed!" << std::endl;
+                    std::cout << "Dissassemble failed!" << std::endl;
                     std::cout << "Error Code: " << static_cast<uint32_t>(errorCode) << std::endl;
                 }
 
                 else {
-                    std::cout << "Assembled " << in << " -> " << out << std::endl;
+                    std::cout << "Disassembled " << in << " -> " << out << std::endl;
                 }
 
                 break;
@@ -46,12 +46,12 @@ void testing() {
 
                 Assembler::ErrorCode errorCode = Assembler::generateAssemble(in, out);
                 if (static_cast<uint32_t>(errorCode)) {
-                    std::cout << "Dissassemble failed!" << std::endl;
+                    std::cout << "Assemble failed!" << std::endl;
                     std::cout << "Error Code: " << static_cast<uint32_t>(errorCode) << std::endl;
                 }
 
                 else {
-                    std::cout << "Disassembled " << in << " -> " << out << std::endl;
+                    std::cout << "Assembled " << in << " -> " << out << std::endl;
                 }
 
                 break;
@@ -101,21 +101,8 @@ void testing() {
 
 int main(int argc, char** argv) {
 
-    // Remove once true main functionality is built
+    // Remove once proper main functionality is built
     testing();
-
-    const char* in = "intermediate/test.irbin";
-    const char* out = "out/test.asm";
-
-    Disassembler::ErrorCode errorCode = Disassembler::generateDisassemble(in, out);
-    if (static_cast<uint32_t>(errorCode)) {
-        std::printf("Dissassemble failed!\n");
-        std::printf("Error Code: %d\n", static_cast<uint32_t>(errorCode));
-    }
-
-    else {
-        std::printf("Disassembled %s -> %s\n", in, out);
-    }
 
     return 0;
 
