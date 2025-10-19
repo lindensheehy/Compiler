@@ -15,6 +15,7 @@ void testing() {
         std::cout << "1 - Dissassembler" << std::endl;
         std::cout << "2 - Assembler" << std::endl;
         std::cout << "3 - File utility" << std::endl;
+        std::cout << "4 - Exit" << std::endl;
         std::cin >> input;
 
         switch (input) {
@@ -81,6 +82,10 @@ void testing() {
 
                 break;
 
+            }
+
+            case '4': {
+                return;
             }
 
             default: {
