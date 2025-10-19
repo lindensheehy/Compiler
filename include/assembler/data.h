@@ -91,14 +91,14 @@ struct Instruction {
 
 struct InstructionBytes {
 
-    public:
-        uint8_t opcode[4];
-        uint8_t opcodeSize;
-        uint8_t modrm;
-        uint8_t displacementSize;
-        uint32_t displacement;
-        uint8_t immediateSize;
-        uint32_t immediate;
+    uint8_t opcode[4];
+    uint8_t opcodeSize;
+    bool hasModrmByte;
+    uint8_t modrm;
+    uint8_t displacementSize;
+    uint32_t displacement;
+    uint8_t immediateSize;
+    uint32_t immediate;
 
 };
 

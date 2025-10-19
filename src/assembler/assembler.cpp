@@ -1,6 +1,7 @@
 #include "assembler/assembler.h"
 
 #include "assembler/lookup.h"
+#include "assembler/logHelpers.h"
 #include "core/File.h"
 
 #include <cstdio>
@@ -50,6 +51,7 @@ size_t handleMemory(uint8_t* fileData, size_t startIndex, Instruction* instructi
         case '1': {
 
             operand->mem.offset = static_cast<uint32_t>(fileData[startIndex + 2]);
+            operand->mem.offsetSize = 1;
 
             consumed = 3;
 
@@ -69,6 +71,7 @@ size_t handleMemory(uint8_t* fileData, size_t startIndex, Instruction* instructi
             littleEndianImm |= (bigEndianImm >> 24) & 0x000000FF;
 
             operand->mem.offset = littleEndianImm;
+            operand->mem.offsetSize = 4;
 
             consumed = 6;
 
@@ -127,10 +130,10 @@ size_t handleImmediate(uint8_t* fileData, size_t startIndex, Instruction* instru
             memcpy(&bigEndianImm, fileData + startIndex + 1, sizeof(uint32_t));
 
             uint32_t littleEndianImm = 0;
-            littleEndianImm |= (bigEndianImm << 24) & 0xFF000000;
-            littleEndianImm |= (bigEndianImm << 8)  & 0x00FF0000;
-            littleEndianImm |= (bigEndianImm >> 8)  & 0x0000FF00;
-            littleEndianImm |= (bigEndianImm >> 24) & 0x000000FF;
+            littleEndianImm |= (bigEndianImm & 0xFF000000) >> 24;
+            littleEndianImm |= (bigEndianImm & 0x00FF0000) >> 8;
+            littleEndianImm |= (bigEndianImm & 0x0000FF00) << 8;
+            littleEndianImm |= (bigEndianImm & 0x000000FF) << 24;
 
             operand->immediate.value = littleEndianImm;
 
@@ -165,7 +168,6 @@ size_t handleImmediate(uint8_t* fileData, size_t startIndex, Instruction* instru
 // Assembles the instruction data from 'instruction' into 'instructionBytes'. Returns true on a failiure
 bool assembleInstruction(const Instruction& instruction, InstructionBytes* instructionBytesOut, File* log) {
 
-    memset(instructionBytesOut, 0, sizeof(InstructionBytes));
     constexpr size_t MAX_OPERAND_COUNT = (sizeof(InstructionSignature::operands) / sizeof(SignatureOperandType));
     
     const InstructionSignature* match = matchInstruction(instruction);
@@ -173,12 +175,16 @@ bool assembleInstruction(const Instruction& instruction, InstructionBytes* instr
         log->write("Error: assembleInstruction was unable to match the given instruction to any known signature!", true);
         return true;
     }
+
+    log->write("Matched instruction to signature:", true);
+    logInstructionSignature(*match, log);
+    log->writeNewLine();
     
     // Opcode
     {
         memcpy(
             &(instructionBytesOut->opcode), 
-            &(match->opcode), 
+            &(match->opcodeBytes), 
             std::min(sizeof(match->opcode), static_cast<size_t>(match->opcodeBytesLength))
         );
         instructionBytesOut->opcodeSize = match->opcodeBytesLength;
@@ -336,6 +342,8 @@ bool assembleInstruction(const Instruction& instruction, InstructionBytes* instr
 
         }
 
+        instructionBytesOut->hasModrmByte = true;
+
     }
     END_MODRM:
 
@@ -442,6 +450,40 @@ bool assembleInstruction(const Instruction& instruction, InstructionBytes* instr
 // Writes the IntructionBytes into the writeBuffer. Conditionally writes parts depending on the contents
 void writeInstruction(const InstructionBytes& instructionBytes, uint8_t* writeBuffer, size_t* writeBufferLength, File* log) {
 
+    uint8_t* writePtr = writeBuffer + (*writeBufferLength);
+
+    // Opcode
+    log->write("Writing opcode: ptr = ");
+    log->write(static_cast<int>((*writeBufferLength) + static_cast<long long>(writePtr - writeBuffer)), true);
+    memcpy(writePtr, instructionBytes.opcode, instructionBytes.opcodeSize);
+    writePtr += instructionBytes.opcodeSize;
+
+    // ModR/M byte
+    if (instructionBytes.hasModrmByte) {
+        log->write("Writing modrm: ptr = ");
+        log->write(static_cast<int>((*writeBufferLength) + static_cast<long long>(writePtr - writeBuffer)), true);
+        (*writePtr) = instructionBytes.modrm;
+        writePtr++;
+    }
+
+    // Displacement
+    if (instructionBytes.displacementSize != 0) {
+        log->write("Writing displacement: ptr = ");
+        log->write(static_cast<int>((*writeBufferLength) + static_cast<long long>(writePtr - writeBuffer)), true);
+        memcpy(writePtr, reinterpret_cast<const uint8_t*>(&(instructionBytes.displacement)), instructionBytes.displacementSize);
+        writePtr += instructionBytes.displacementSize;
+    }
+
+    // Immediate
+    if (instructionBytes.immediateSize != 0) {
+        log->write("Writing immediate: ptr = ");
+        log->write(static_cast<int>((*writeBufferLength) + static_cast<long long>(writePtr - writeBuffer)), true);
+        memcpy(writePtr, reinterpret_cast<const uint8_t*>(&(instructionBytes.immediate)), instructionBytes.immediateSize);
+        writePtr += instructionBytes.immediateSize;
+    }
+
+    (*writeBufferLength) += static_cast<size_t>(writePtr - (writeBuffer + (*writeBufferLength)));
+
     return;
 
 }
@@ -489,19 +531,33 @@ ErrorCode Assembler::generateAssemble(const char* fileNameIn, const char* fileNa
     size_t bytesConsumed;
     Instruction instructionBuilder {};
     InstructionBytes instructionBytes {};
+    bool skipFirstAssembleInstruction = true;
 
     File fileOut(fileNameOut);
     fileOut.clear();
 
     for (size_t i = 0; i < fileLength; i++) {
 
+        log.write("On fileData[");
+        log.write(static_cast<long long>(i));
+        log.write("]:", true);
+
+        logInstruction(instructionBuilder, &log);
+        log.writeNewLine();
+
         switch (file[i]) {
             
             // Opcode
             case 'O': {
 
-                assembleInstruction(instructionBuilder, &instructionBytes, &log);
-                writeInstruction(instructionBytes, writeBuffer, &writeBufferLength, &log);
+                if (skipFirstAssembleInstruction) {
+                    skipFirstAssembleInstruction = false;
+                } else {
+                    assembleInstruction(instructionBuilder, &instructionBytes, &log);
+                    writeInstruction(instructionBytes, writeBuffer, &writeBufferLength, &log);
+                    memset(&instructionBuilder, 0x00, sizeof(Instruction));
+                    memset(&instructionBytes, 0x00, sizeof(InstructionBytes));
+                }
 
                 bytesConsumed = handleOpcode(file[i + 1], &instructionBuilder, &log);
                 break;
@@ -553,6 +609,8 @@ ErrorCode Assembler::generateAssemble(const char* fileNameIn, const char* fileNa
 
     assembleInstruction(instructionBuilder, &instructionBytes, &log);
     writeInstruction(instructionBytes, writeBuffer, &writeBufferLength, &log);
+    memset(&instructionBuilder, 0x00, sizeof(Instruction));
+    memset(&instructionBytes, 0x00, sizeof(InstructionBytes));
 
     fileOut.write(writeBuffer, writeBufferLength);
     delete[] writeBuffer;
