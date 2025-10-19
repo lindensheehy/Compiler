@@ -50,12 +50,12 @@ class File {
 
         // Appends 'message' to the file with an optional newline terminator (overloads for various types)
         void write(const char* message, bool newLine = false);
-        void write(char message, bool newLine, WriteFormat writeFormat = WriteFormat::TEXT);
-        void write(short message, bool newLine);
-        void write(int message, bool newLine);
-        void write(long long message, bool newLine);
-        void write(float message, bool newLine);
-        void write(double message, bool newLine);
+        void write(char message, bool newLine = false, WriteFormat writeFormat = WriteFormat::TEXT);
+        void write(short message, bool newLine = false);
+        void write(int message, bool newLine = false);
+        void write(long long message, bool newLine = false);
+        void write(float message, bool newLine = false);
+        void write(double message, bool newLine = false);
 
         // New line only
         void writeNewLine();
