@@ -12,7 +12,7 @@ const char* registerMap[BYTE_RANGE];
 // Sets up the opcode map. This must be called before using getOpcode()
 void initOpcodeMap() {
     
-    // Set all to "???" to make unmapped outputs more readable
+    // Set all to "???" to make unmapped outputs more readable and avoid nullptr errors
     const char* unknown = "???";
     for (size_t i = 0; i < BYTE_RANGE; i++) {
         opcodeMap[i] = unknown;

@@ -2,6 +2,7 @@
 
 #include "disassembler/map.h"
 #include "core/fileio.h"
+#include "core/File.h"
 
 #include <string.h>
 #include <cstddef>
@@ -10,11 +11,11 @@
 using namespace Disassembler;
 
 // Forward declaration
-size_t writeImmediate(uint8_t* fileData, size_t startIndex, uint8_t* writeBuffer, size_t* writeBufferLength);
+size_t writeImmediate(uint8_t* fileData, size_t startIndex, uint8_t* writeBuffer, size_t* writeBufferLength, File* log);
 
 
 // Writes an opcode label into the writeBuffer based on the char code passed
-size_t writeOpcode(uint8_t opcode, uint8_t* writeBuffer, size_t* writeBufferLength) {
+size_t writeOpcode(uint8_t opcode, uint8_t* writeBuffer, size_t* writeBufferLength, File* log) {
 
     size_t strLength;
     const char* str = getOpcode(opcode, &strLength);
@@ -29,7 +30,7 @@ size_t writeOpcode(uint8_t opcode, uint8_t* writeBuffer, size_t* writeBufferLeng
 }
 
 // Writes a register label into the writeBuffer based on the char code passed
-size_t writeRegister(uint8_t reg, uint8_t* writeBuffer, size_t* writeBufferLength) {
+size_t writeRegister(uint8_t reg, uint8_t* writeBuffer, size_t* writeBufferLength, File* log) {
 
     size_t strLength;
     const char* str = getRegister(reg, &strLength);
@@ -44,12 +45,12 @@ size_t writeRegister(uint8_t reg, uint8_t* writeBuffer, size_t* writeBufferLengt
 }
 
 // Writes a memory reference label into the writeBuffer based on the designated chunk of memory in fileData
-size_t writeMemory(uint8_t* fileData, size_t startIndex, uint8_t* writeBuffer, size_t* writeBufferLength) {
+size_t writeMemory(uint8_t* fileData, size_t startIndex, uint8_t* writeBuffer, size_t* writeBufferLength, File* log) {
     
     writeBuffer[(*writeBufferLength)] = '[';
     (*writeBufferLength)++;
 
-    writeRegister(fileData[startIndex], writeBuffer, writeBufferLength);
+    writeRegister(fileData[startIndex], writeBuffer, writeBufferLength, log);
 
     uint8_t offsetLength = fileData[startIndex + 1];
     uint8_t offsetFirst = fileData[startIndex + 2];
@@ -61,7 +62,7 @@ size_t writeMemory(uint8_t* fileData, size_t startIndex, uint8_t* writeBuffer, s
         memcpy(writeBuffer + (*writeBufferLength), padding, paddingLen);
         (*writeBufferLength) += paddingLen;
 
-        writeImmediate(fileData, startIndex + 1, writeBuffer, writeBufferLength);
+        writeImmediate(fileData, startIndex + 1, writeBuffer, writeBufferLength, log);
 
     }
 
@@ -70,15 +71,28 @@ size_t writeMemory(uint8_t* fileData, size_t startIndex, uint8_t* writeBuffer, s
 
     size_t consumed = 2;
     switch (offsetLength) {
+
         case '1':
             consumed += 1;
             break;
+
         case '4':
             consumed += 4;
             break;
-        default:
-            // log error case
+
+        default: {
+
+            log->write("Error: Found an invalid memory offset length character!", true);
+            log->write(" >> Found character \'");
+            log->write(static_cast<char>(offsetLength));
+            log->write("\' (int value ");
+            log->write(static_cast<char>(offsetLength), false, WriteFormat::DECIMAL);
+            log->write("), which does not match any known length character.", true);
+
             break;
+
+        }
+
     }
 
     return consumed;
@@ -86,7 +100,7 @@ size_t writeMemory(uint8_t* fileData, size_t startIndex, uint8_t* writeBuffer, s
 }
 
 // Writes an immediate value label into the writeBuffer based on the designated chunk of memory in fileData
-size_t writeImmediate(uint8_t* fileData, size_t startIndex, uint8_t* writeBuffer, size_t* writeBufferLength) {
+size_t writeImmediate(uint8_t* fileData, size_t startIndex, uint8_t* writeBuffer, size_t* writeBufferLength, File* log) {
 
     size_t deltaIndex;
     int written;
@@ -121,8 +135,16 @@ size_t writeImmediate(uint8_t* fileData, size_t startIndex, uint8_t* writeBuffer
         }
 
         default: {
-            // log error case
+            
+            log->write("Error: Found an invalid immediate length character!", true);
+            log->write(" >> Found character \'");
+            log->write(static_cast<char>(fileData[startIndex]));
+            log->write("\' (int value ");
+            log->write(static_cast<char>(fileData[startIndex]), false, WriteFormat::DECIMAL);
+            log->write("), which does not match any known length character.", true);
+
             break;
+
         }
 
     }
@@ -134,7 +156,7 @@ size_t writeImmediate(uint8_t* fileData, size_t startIndex, uint8_t* writeBuffer
 }
 
 // Writes the padding between labels based on what type of labels are nearby
-void writePadding(uint8_t lastPrefix, uint8_t nextPrefix, uint8_t* writeBuffer, size_t* writeBufferLength) {
+void writePadding(uint8_t lastPrefix, uint8_t nextPrefix, uint8_t* writeBuffer, size_t* writeBufferLength, File* log) {
 
     /*
         There are three types of padding:
@@ -186,12 +208,39 @@ void writePadding(uint8_t lastPrefix, uint8_t nextPrefix, uint8_t* writeBuffer, 
 
 ErrorCode Disassembler::generateDisassemble(const char* fileNameIn, const char* fileNameOut) {
 
-    uint8_t* file = readFile(fileNameIn);
+    File log("logs/dissassembler.log");
+    log.clear();
+
     size_t fileLength;
-    bool file_length_rc = getFileLength(fileNameIn, &fileLength);
-    if (!file_length_rc) {
-        return ErrorCode::INVALID_FILE;
+    uint8_t* file;
+
+    // The scope here lets fileIn be quickly destructed, since its an OS resource
+    {
+        File fileIn(fileNameIn);
+        fileLength = fileIn.getSize();
+        file = fileIn.read();
     }
+
+    if (fileLength == 0) {
+
+        log.write("Error: The file at 'fileNameIn' (\"");
+        log.write(fileNameIn);
+        log.write("\") is empty!", true);
+
+        return ErrorCode::INVALID_FILE;
+
+    }
+
+    if (file == nullptr) {
+
+        log.write("Error: Failed to read from 'fileNameIn' (\"");
+        log.write(fileNameIn);
+        log.write("\")!", true);
+
+        return ErrorCode::INVALID_FILE;
+
+    }
+
     constexpr size_t WRITE_BUFFER_SIZE = 65536;
     uint8_t* writeBuffer = new uint8_t[WRITE_BUFFER_SIZE] {0x00};
     size_t writeBufferLength = 0;
@@ -217,55 +266,50 @@ ErrorCode Disassembler::generateDisassemble(const char* fileNameIn, const char* 
 
     for (size_t i = 0; i < fileLength; i++) {
 
-        writePadding(lastPrefix, file[i], writeBuffer, &writeBufferLength);
+        writePadding(lastPrefix, file[i], writeBuffer, &writeBufferLength, &log);
 
         switch (file[i]) {
             
             // Opcode
             case 'O': {
-
-                bytesConsumed = writeOpcode(file[i + 1], writeBuffer, &writeBufferLength);
-                i += bytesConsumed;
-
+                bytesConsumed = writeOpcode(file[i + 1], writeBuffer, &writeBufferLength, &log);
                 break;
-
             }
 
             // Register
             case 'R': {
-
-                bytesConsumed = writeRegister(file[i + 1], writeBuffer, &writeBufferLength);
-                i += bytesConsumed;
-                
+                bytesConsumed = writeRegister(file[i + 1], writeBuffer, &writeBufferLength, &log);
                 break;
-                
             }
 
             // Memory
             case 'M': {
-
-                bytesConsumed = writeMemory(file, i + 1, writeBuffer, &writeBufferLength);
-                i += bytesConsumed;
-                
+                bytesConsumed = writeMemory(file, i + 1, writeBuffer, &writeBufferLength, &log);
                 break;
-                
             }
 
             // Immediate
             case 'I': {
-
-                bytesConsumed = writeImmediate(file, i + 1, writeBuffer, &writeBufferLength);
-                i += bytesConsumed;
-                
+                bytesConsumed = writeImmediate(file, i + 1, writeBuffer, &writeBufferLength, &log);
                 break;
-                
             }
 
             default: {
+
+                log.write("Error: Found an invalid prefix character!", true);
+                log.write(" >> Found character \'");
+                log.write(static_cast<char>(file[i]));
+                log.write("\' (int value ");
+                log.write(static_cast<char>(file[i]), false, WriteFormat::DECIMAL);
+                log.write("), which does not match any known prefix.", true);
+
                 return ErrorCode::FOUND_INVALID_PREFIX;
+
             }
 
         }
+
+        i += bytesConsumed;
 
         if (writeBufferLength > WRITE_BUFFER_LIMIT) {
             writeFile(fileNameOut, writeBuffer, writeBufferLength);
