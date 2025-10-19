@@ -149,7 +149,7 @@ bool stringToDouble(const char* string, double* result, int MAXLENGTH) {
 
 }
 
-bool intToString(int value, char* string, int MAXLENGTH) {
+bool intToString(long long value, char* string, int MAXLENGTH) {
 
     // Not enough space in the string
     if (MAXLENGTH < 2) return false;
