@@ -1,0 +1,309 @@
+# Packaged Executable File Format
+
+This document outlines the format of a Windows Packaged Executable file. While all this information is available online, this is simply my personal relay of that information.
+The PE format is quite extensive, so below is a TOC with links to each subsection.
+
+---
+
+## Table of Contents
+
+- [1. DOS Header (`IMAGE_DOS_HEADER`)](#1-dos-header-imagedosheader)
+  - [e_magic](#e_magic)
+  - [e_cblp](#e_cblp)
+  - [e_cp](#e_cp)
+  - [e_crlc](#e_crlc)
+  - [e_cparhdr](#e_cparhdr)
+  - [e_minalloc](#e_minalloc)
+  - [e_maxalloc](#e_maxalloc)
+  - [e_ss](#e_ss)
+  - [e_sp](#e_sp)
+  - [e_csum](#e_csum)
+  - [e_ip](#e_ip)
+  - [e_cs](#e_cs)
+  - [e_lfarlc](#e_lfarlc)
+  - [e_ovno](#e_ovno)
+  - [e_res](#e_res)
+  - [e_oemid](#e_oemid)
+  - [e_oeminfo](#e_oeminfo)
+  - [e_res2](#e_res2)
+  - [e_lfanew](#e_lfanew)
+
+- [2. DOS Stub](#2-dos-stub)
+
+- [3. PE Signature](#3-pe-signature)
+
+- [4. COFF File Header (`IMAGE_FILE_HEADER`)](#4-coff-file-header-image_file_header)
+  - [Machine](#machine)
+  - [NumberOfSections](#numberofsections)
+  - [TimeDateStamp](#timedatestamp)
+  - [PointerToSymbolTable](#pointertosymboltable)
+  - [NumberOfSymbols](#numberofsymbols)
+  - [SizeOfOptionalHeader](#sizeofoptionalheader)
+  - [Characteristics](#characteristics)
+
+- [5. Optional Header (`IMAGE_OPTIONAL_HEADER32`)](#5-optional-header-image_optional_header32)
+  - [5.1 Standard Fields](#51-standard-fields)
+    - [Magic](#magic)
+    - [MajorLinkerVersion](#majorlinkerversion)
+    - [MinorLinkerVersion](#minorlinkerversion)
+    - [SizeOfCode](#sizeofcode)
+    - [SizeOfInitializedData](#sizeofinitializeddata)
+    - [SizeOfUninitializedData](#sizeofuninitializeddata)
+    - [AddressOfEntryPoint](#addressofentrypoint)
+    - [BaseOfCode](#baseofcode)
+    - [BaseOfData](#baseofdata)
+  - [5.2 Windows-Specific Fields](#52-windows-specific-fields)
+    - [ImageBase](#imagebase)
+    - [SectionAlignment](#sectionalignment)
+    - [FileAlignment](#filealignment)
+    - [MajorOperatingSystemVersion](#majoroperatingsystemversion)
+    - [MinorOperatingSystemVersion](#minoroperatingsystemversion)
+    - [MajorImageVersion](#majorimageversion)
+    - [MinorImageVersion](#minorimageversion)
+    - [MajorSubsystemVersion](#majorsubsystemversion)
+    - [MinorSubsystemVersion](#minorsubsystemversion)
+    - [Win32VersionValue](#win32versionvalue)
+    - [SizeOfImage](#sizeofimage)
+    - [SizeOfHeaders](#sizeofheaders)
+    - [CheckSum](#checksum)
+    - [Subsystem](#subsystem)
+    - [DllCharacteristics](#dllcharacteristics)
+    - [SizeOfStackReserve](#sizeofstackreserve)
+    - [SizeOfStackCommit](#sizeofstackcommit)
+    - [SizeOfHeapReserve](#sizeofheapreserve)
+    - [SizeOfHeapCommit](#sizeofheapcommit)
+    - [LoaderFlags](#loaderflags)
+    - [NumberOfRvaAndSizes](#numberofrvaandsizes)
+  - [5.3 Data Directories (`IMAGE_DATA_DIRECTORY[16]`)](#53-data-directories-image_data_directory16)
+    - [VirtualAddress](#virtualaddress)
+    - [Size](#size)
+    - [Directory Entries](#directory-entries)
+      - [Export Table](#export-table)
+      - [Import Table](#import-table)
+      - [Resource Table](#resource-table)
+      - [Exception Table](#exception-table)
+      - [Certificate Table](#certificate-table)
+      - [Base Relocation Table](#base-relocation-table)
+      - [Debug Directory](#debug-directory)
+      - [Architecture](#architecture)
+      - [Global Pointer](#global-pointer)
+      - [TLS Table](#tls-table)
+      - [Load Configuration Table](#load-configuration-table)
+      - [Bound Import Table](#bound-import-table)
+      - [Import Address Table (IAT)](#import-address-table-iat)
+      - [Delay Import Descriptor](#delay-import-descriptor)
+      - [COM Descriptor](#com-descriptor)
+      - [Reserved](#reserved)
+
+- [6. Section Table (`IMAGE_SECTION_HEADER[]`)](#6-section-table-image_section_header)
+  - [Name](#name)
+  - [VirtualSize](#virtualsize)
+  - [VirtualAddress](#virtualaddress)
+  - [SizeOfRawData](#sizeofrawdata)
+  - [PointerToRawData](#pointertorawdata)
+  - [PointerToRelocations](#pointertorelocations)
+  - [PointerToLinenumbers](#pointertolinenumbers)
+  - [NumberOfRelocations](#numberofrelocations)
+  - [NumberOfLinenumbers](#numberoflinenumbers)
+  - [Characteristics](#characteristics-section)
+
+- [7. Section Contents](#7-section-contents)
+  - [.text](#text)
+  - [.data](#data)
+  - [.rdata](#rdata)
+  - [.bss](#bss)
+  - [.idata](#idata)
+  - [.edata](#edata)
+  - [.rsrc](#rsrc)
+
+- [8. Import Table (`IMAGE_IMPORT_DESCRIPTOR[]`)](#8-import-table-image_import_descriptor)
+  - [OriginalFirstThunk](#originalfirstthunk)
+  - [TimeDateStamp](#timedatestamp-import)
+  - [ForwarderChain](#forwarderchain)
+  - [Name](#name-import)
+  - [FirstThunk](#firstthunk)
+  - [Import Name Table (INT)](#import-name-table-int)
+  - [Import Address Table (IAT)](#import-address-table-iat)
+  - [Hint/Name Entry](#hintname-entry)
+
+- [9. Export Table (`IMAGE_EXPORT_DIRECTORY`)](#9-export-table-image_export_directory)
+  - [Characteristics](#characteristics-export)
+  - [TimeDateStamp](#timedatestamp-export)
+  - [MajorVersion](#majorversion)
+  - [MinorVersion](#minorversion)
+  - [Name](#name-export)
+  - [Base](#base)
+  - [NumberOfFunctions](#numberoffunctions)
+  - [NumberOfNames](#numberofnames)
+  - [AddressOfFunctions](#addressoffunctions)
+  - [AddressOfNames](#addressofnames)
+  - [AddressOfNameOrdinals](#addressofnameordinals)
+
+- [10. Relocation Table (`IMAGE_BASE_RELOCATION[]`)](#10-relocation-table-image_base_relocation)
+  - [VirtualAddress](#virtualaddress-reloc)
+  - [SizeOfBlock](#sizeofblock)
+  - [TypeOffset[]](#typeoffset)
+
+- [11. Resource Table (`IMAGE_RESOURCE_DIRECTORY`)](#11-resource-table-image_resource_directory)
+  - [Characteristics](#characteristics-resource)
+  - [TimeDateStamp](#timedatestamp-resource)
+  - [MajorVersion](#majorversion-resource)
+  - [MinorVersion](#minorversion-resource)
+  - [NumberOfNamedEntries](#numberofnamedentries)
+  - [NumberOfIdEntries](#numberofidentries)
+
+- [12. Debug Directory (`IMAGE_DEBUG_DIRECTORY`)](#12-debug-directory-image_debug_directory)
+
+- [13. Certificate Table](#13-certificate-table)
+
+- [14. TLS Directory (`IMAGE_TLS_DIRECTORY`)](#14-tls-directory-image_tls_directory)
+
+- [15. Load Configuration Directory](#15-load-configuration-directory)
+
+- [16. Bound Import Directory](#16-bound-import-directory)
+
+- [17. COM Descriptor Directory](#17-com-descriptor-directory)
+
+- [18. Overlay Data](#18-overlay-data)
+
+- [19. Summary of Load Order](#19-summary-of-load-order)
+
+---
+
+## 1. DOS Header (`IMAGE_DOS_HEADER`)
+
+The DOS header is the very first structure in a PE file.  
+It contains legacy fields from the MS-DOS executable format (MZ), and a pointer to the start of the PE header.
+
+---
+
+### e_magic
+**Offset:** 0x00  
+**Size:** 2 bytes  
+**Description:** 
+
+---
+
+### e_cblp
+**Offset:** 0x02  
+**Size:** 2 bytes  
+**Description:** 
+
+---
+
+### e_cp
+**Offset:** 0x04  
+**Size:** 2 bytes  
+**Description:** 
+
+---
+
+### e_crlc
+**Offset:** 0x06  
+**Size:** 2 bytes  
+**Description:** 
+
+---
+
+### e_cparhdr
+**Offset:** 0x08  
+**Size:** 2 bytes  
+**Description:** 
+
+---
+
+### e_minalloc
+**Offset:** 0x0A  
+**Size:** 2 bytes  
+**Description:** 
+
+---
+
+### e_maxalloc
+**Offset:** 0x0C  
+**Size:** 2 bytes  
+**Description:** 
+
+---
+
+### e_ss
+**Offset:** 0x0E  
+**Size:** 2 bytes  
+**Description:** 
+
+---
+
+### e_sp
+**Offset:** 0x10  
+**Size:** 2 bytes  
+**Description:** 
+
+---
+
+### e_csum
+**Offset:** 0x12  
+**Size:** 2 bytes  
+**Description:** 
+
+---
+
+### e_ip
+**Offset:** 0x14  
+**Size:** 2 bytes  
+**Description:** 
+
+---
+
+### e_cs
+**Offset:** 0x16  
+**Size:** 2 bytes  
+**Description:** 
+
+---
+
+### e_lfarlc
+**Offset:** 0x18  
+**Size:** 2 bytes  
+**Description:** 
+
+---
+
+### e_ovno
+**Offset:** 0x1A  
+**Size:** 2 bytes  
+**Description:** 
+
+---
+
+### e_res
+**Offset:** 0x1C  
+**Size:** 8 bytes (4 × 2 bytes)  
+**Description:** 
+
+---
+
+### e_oemid
+**Offset:** 0x24  
+**Size:** 2 bytes  
+**Description:** 
+
+---
+
+### e_oeminfo
+**Offset:** 0x26  
+**Size:** 2 bytes  
+**Description:** 
+
+---
+
+### e_res2
+**Offset:** 0x28  
+**Size:** 20 bytes (10 × 2 bytes)  
+**Description:** 
+
+---
+
+### e_lfanew
+**Offset:** 0x3C  
+**Size:** 4 bytes  
+**Description:** Offset to the PE header (start of `"PE\0\0"`) signature.
