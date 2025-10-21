@@ -173,21 +173,23 @@ The PE format is quite extensive, so below is a TOC with links to each subsectio
 ## 1. DOS Header (`IMAGE_DOS_HEADER`)
 
 The DOS header is the very first structure in a PE file.  
-It contains legacy fields from the MS-DOS executable format (MZ), and a pointer to the start of the PE header.
+It contains legacy fields from the MS-DOS executable format (MZ), which is hardly relevant to the PE file format. The only notable fields for our purposes are:
+- `e_magic` -> Tells windows to treat the file as a PE, meaning it will directly jump to the following field and skip the rest of the data.
+- `e_lfanew` -> Tells windows where the PE header begins.
 
 ---
 
 ### e_magic
 **Offset:** 0x00  
 **Size:** 2 bytes  
-**Description:** 
+**Description:** This field is responsible for marking the file as a DOS executable, which is necessary for Windows to load it as a PE. The required value for this field is `0x5A4D`, corresponding to the ASCII characters `MZ`.
 
 ---
 
 ### e_cblp
 **Offset:** 0x02  
 **Size:** 2 bytes  
-**Description:** 
+**Description:** The size of the last page of the file. Pages are 512 bytes long in this context. so 
 
 ---
 

@@ -5,7 +5,7 @@
 #pragma pack(push, 1)
 
 struct ImageDosHeader {
-    uint16_t e_magic;
+    uint16_t e_magic = 0x5A4D; // ASCII "MZ" (required value)
     uint16_t e_cblp;
     uint16_t e_cp;
     uint16_t e_crlc;
