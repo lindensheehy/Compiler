@@ -172,7 +172,7 @@ The PE format is quite extensive, so below is a TOC with links to each subsectio
 
 ## 1. DOS Header (`IMAGE_DOS_HEADER`)
 
-The DOS header is the very first structure in a PE file.  
+The DOS header is the very first structure in a PE file.
 It contains legacy fields from the MS-DOS executable format (MZ), which is hardly relevant to the PE file format. The only notable fields for our purposes are:
 - `e_magic` -> Tells windows to treat the file as a PE, meaning it will directly jump to the following field and skip the rest of the data.
 - `e_lfanew` -> Tells windows where the PE header begins.
@@ -180,132 +180,132 @@ It contains legacy fields from the MS-DOS executable format (MZ), which is hardl
 ---
 
 ### e_magic
-**Offset:** 0x00  
-**Size:** 2 bytes  
+**Offset:** 0x00
+**Size:** 2 bytes
 **Description:** This field is responsible for marking the file as a DOS executable, which is necessary for Windows to load it as a PE. The required value for this field is `0x5A4D`, corresponding to the ASCII characters `MZ`.
 
 ---
 
 ### e_cblp
-**Offset:** 0x02  
-**Size:** 2 bytes  
-**Description:** The size of the last page of the file. Pages are 512 bytes long in this context. so 
+**Offset:** 0x02
+**Size:** 2 bytes
+**Description:** The size of the last page of the file. Pages are 512 bytes in this context, so `e_cblp = (filesize % 512)`. When this field is set to 0, the last page is interpreted to be full (512 bytes). Together with `e_cp`, this determines total filesize.
 
 ---
 
 ### e_cp
-**Offset:** 0x04  
-**Size:** 2 bytes  
-**Description:** 
+**Offset:** 0x04
+**Size:** 2 bytes
+**Description:** The amount of pages the file occupies. Pages are 512 bytes in this context, and this *includes* the last page even if its incomplete, so `e_cp = (filesize / 512) + ((filesize % 512 == 0) ? 0 : 1)`. Together with `e_cblp`, this determines total filesize.
 
 ---
 
 ### e_crlc
-**Offset:** 0x06  
-**Size:** 2 bytes  
-**Description:** 
+**Offset:** 0x06
+**Size:** 2 bytes
+**Description:** The amount of **relocation** entries contained in the relocation table. This says how many 4 byte entries should be read, starting from the offset specified by `e_lfarlc`.
 
 ---
 
 ### e_cparhdr
-**Offset:** 0x08  
-**Size:** 2 bytes  
-**Description:** 
+**Offset:** 0x08
+**Size:** 2 bytes
+**Description:** The amount of **paragraphs** that make up the header, each paragraph being 16 bytes. While this value is ignored for PE files, its usually set to 4, as the DOS Header is 64 bytes long.
 
 ---
 
 ### e_minalloc
-**Offset:** 0x0A  
-**Size:** 2 bytes  
-**Description:** 
+**Offset:** 0x0A
+**Size:** 2 bytes
+**Description:** The minimum amount of **paragraphs** the program needs beyond the header, each paragraph being 16 bytes.
 
 ---
 
 ### e_maxalloc
-**Offset:** 0x0C  
-**Size:** 2 bytes  
-**Description:** 
+**Offset:** 0x0C
+**Size:** 2 bytes
+**Description:** The maximum amount of **paragraphs** the program needs beyond the header, each paragraph being 16 bytes.
 
 ---
 
 ### e_ss
-**Offset:** 0x0E  
-**Size:** 2 bytes  
+**Offset:** 0x0E
+**Size:** 2 bytes
 **Description:** 
 
 ---
 
 ### e_sp
-**Offset:** 0x10  
-**Size:** 2 bytes  
+**Offset:** 0x10
+**Size:** 2 bytes
 **Description:** 
 
 ---
 
 ### e_csum
-**Offset:** 0x12  
-**Size:** 2 bytes  
+**Offset:** 0x12
+**Size:** 2 bytes
 **Description:** 
 
 ---
 
 ### e_ip
-**Offset:** 0x14  
-**Size:** 2 bytes  
+**Offset:** 0x14
+**Size:** 2 bytes
 **Description:** 
 
 ---
 
 ### e_cs
-**Offset:** 0x16  
-**Size:** 2 bytes  
+**Offset:** 0x16
+**Size:** 2 bytes
 **Description:** 
 
 ---
 
 ### e_lfarlc
-**Offset:** 0x18  
-**Size:** 2 bytes  
+**Offset:** 0x18
+**Size:** 2 bytes
 **Description:** 
 
 ---
 
 ### e_ovno
-**Offset:** 0x1A  
-**Size:** 2 bytes  
+**Offset:** 0x1A
+**Size:** 2 bytes
 **Description:** 
 
 ---
 
 ### e_res
-**Offset:** 0x1C  
-**Size:** 8 bytes (4 × 2 bytes)  
+**Offset:** 0x1C
+**Size:** 8 bytes (4 × 2 bytes)
 **Description:** 
 
 ---
 
 ### e_oemid
-**Offset:** 0x24  
-**Size:** 2 bytes  
+**Offset:** 0x24
+**Size:** 2 bytes
 **Description:** 
 
 ---
 
 ### e_oeminfo
-**Offset:** 0x26  
-**Size:** 2 bytes  
+**Offset:** 0x26
+**Size:** 2 bytes
 **Description:** 
 
 ---
 
 ### e_res2
-**Offset:** 0x28  
-**Size:** 20 bytes (10 × 2 bytes)  
+**Offset:** 0x28
+**Size:** 20 bytes (10 × 2 bytes)
 **Description:** 
 
 ---
 
 ### e_lfanew
-**Offset:** 0x3C  
-**Size:** 4 bytes  
+**Offset:** 0x3C
+**Size:** 4 bytes
 **Description:** Offset to the PE header (start of `"PE\0\0"`) signature.
