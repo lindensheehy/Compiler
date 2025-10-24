@@ -174,8 +174,8 @@ The PE format is quite extensive, so below is a TOC with links to each subsectio
 
 The DOS header is the very first structure in a PE file.
 It contains legacy fields from the MS-DOS executable format (MZ), which is hardly relevant to the PE file format. The only notable fields for our purposes are:
-- `e_magic` -> Tells windows to treat the file as a PE, meaning it will directly jump to the following field and skip the rest of the data.
-- `e_lfanew` -> Tells windows where the PE header begins.
+- `e_magic` -> Tells Windows to treat the file as a PE, meaning it will directly jump to the following field and skip the rest of the data.
+- `e_lfanew` -> Tells Windows where the PE header begins.
 
 ---
 
@@ -196,21 +196,21 @@ It contains legacy fields from the MS-DOS executable format (MZ), which is hardl
 ### e_cp
 **Offset:** 0x04
 **Size:** 2 bytes
-**Description:** The amount of pages the file occupies. Pages are 512 bytes in this context, and this *includes* the last page even if its incomplete, so `e_cp = (filesize / 512) + ((filesize % 512 == 0) ? 0 : 1)`. Together with `e_cblp`, this determines total filesize.
+**Description:** The amount of pages the file occupies. Pages are 512 bytes in this context, and this *includes* the last page even if it's incomplete, so `e_cp = (filesize / 512) + ((filesize % 512 == 0) ? 0 : 1)`. Together with `e_cblp`, this determines total filesize.
 
 ---
 
 ### e_crlc
 **Offset:** 0x06
 **Size:** 2 bytes
-**Description:** The amount of **relocation** entries contained in the relocation table. This says how many 4 byte entries should be read, starting from the offset specified by `e_lfarlc`.
+**Description:** The amount of entries contained in the **relocation table**. This says how many 4 byte entries should be read, starting from the offset specified by `e_lfarlc`.
 
 ---
 
 ### e_cparhdr
 **Offset:** 0x08
 **Size:** 2 bytes
-**Description:** The amount of **paragraphs** that make up the header, each paragraph being 16 bytes. While this value is ignored for PE files, its usually set to 4, as the DOS Header is 64 bytes long.
+**Description:** The amount of **paragraphs** that make up the header, each paragraph being 16 bytes. While this value is ignored for PE files, it's usually set to 4, as the DOS Header is 64 bytes long.
 
 ---
 
@@ -231,77 +231,77 @@ It contains legacy fields from the MS-DOS executable format (MZ), which is hardl
 ### e_ss
 **Offset:** 0x0E
 **Size:** 2 bytes
-**Description:** 
+**Description:** The address of the initial stack pointer value measured in **paragraphs**, each paragraph being 16 bytes. If the stack does not start on a multiple of 16, `e_sp` is responsible for declaring that offset. `e_ss = (stack_start / 16)`.
 
 ---
 
 ### e_sp
 **Offset:** 0x10
 **Size:** 2 bytes
-**Description:** 
+**Description:** The specific address of the initial stack pointer value, as an offset from the address specified by `e_ss`. `e_sp = stack_start - (e_ss * 16)`. In practice, there's no reason for this value to exceed 15. While the loader supports larger values, the maximum physical address is limited by real-mode memory (less than 1 MB), so `e_ss` *always* has enough room to hold the entire paragraph count (`(0xFFFF * 16) < 1 MB`).
 
 ---
 
 ### e_csum
 **Offset:** 0x12
 **Size:** 2 bytes
-**Description:** 
+**Description:** The **additive checksum** of the file. On load, the DOS loader will sum the bytes of the entire file, ignoring overflows (conceptually equivalent to mod `0x10000`), and cross check with this value. 
 
 ---
 
 ### e_ip
 **Offset:** 0x14
 **Size:** 2 bytes
-**Description:** 
+**Description:** The specific address of the initial instruction pointer value, as an offset from the address specified by `e_cs`. `e_ip = code_start - (e_cs * 16)`. In practice, there's no reason for this value to exceed 15. While the loader supports larger values, the maximum physical address is limited by real-mode memory (less than 1 MB), so `e_cs` *always* has enough room to hold the entire paragraph count (`(0xFFFF * 16) < 1 MB`).
 
 ---
 
 ### e_cs
 **Offset:** 0x16
 **Size:** 2 bytes
-**Description:** 
+**Description:** The address of the initial instruction pointer value measured in **paragraphs**, each paragraph being 16 bytes. If the code does not start on a multiple of 16, `e_ip` is responsible for declaring that offset. `e_cs = (code_start / 16)`.
 
 ---
 
 ### e_lfarlc
 **Offset:** 0x18
 **Size:** 2 bytes
-**Description:** 
+**Description:** The offset of the start of the **relocation table** within the file. Together with `e_crlc`, which defines the length of the array, this lets Windows parse the relocation table for handling.
 
 ---
 
 ### e_ovno
 **Offset:** 0x1A
 **Size:** 2 bytes
-**Description:** 
+**Description:** The **overlay numbers** of this file. An overlay is a logical segment of memory, usually 64 KB in the context of a DOS program. This field is only necessary if the program requires more than one segment. If that is the case, there will be multiple executable files, and this number identifies which overlay this particular file belongs to.
 
 ---
 
 ### e_res
 **Offset:** 0x1C
 **Size:** 8 bytes (4 × 2 bytes)
-**Description:** 
+**Description:** This field is essentially just padding. You *can* put values here to be read by the program itself, but the loader will completely ignore it. Think of it like a set of optional read-only data fields for the program.
 
 ---
 
 ### e_oemid
 **Offset:** 0x24
 **Size:** 2 bytes
-**Description:** 
+**Description:** **Original Equipment Manufacturer** ID. While it was initially intended to store an id corresponding to the system that created the executable, these days it's usually left as 0.
 
 ---
 
 ### e_oeminfo
 **Offset:** 0x26
 **Size:** 2 bytes
-**Description:** 
+**Description:** **Original Equipment Manufacturer** Info. This is used to store specific info about the OEM. Like `e_oemid`, these days it's usually left as 0.
 
 ---
 
 ### e_res2
 **Offset:** 0x28
 **Size:** 20 bytes (10 × 2 bytes)
-**Description:** 
+**Description:** This field is essentially just padding. You *can* put values here to be read by the program itself, but the loader will completely ignore it. Think of it like a set of optional read-only data fields for the program.
 
 ---
 
