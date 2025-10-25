@@ -7,7 +7,7 @@ The PE format is quite extensive, so below is a TOC with links to each subsectio
 
 ## Table of Contents
 
-- [1. DOS Header (`IMAGE_DOS_HEADER`)](#1-dos-header-imagedosheader)
+- [1. DOS Header (`IMAGE_DOS_HEADER`)](#1-dos-header-image_dos_header)
   - [e_magic](#e_magic)
   - [e_cblp](#e_cblp)
   - [e_cp](#e_cp)
@@ -29,6 +29,8 @@ The PE format is quite extensive, so below is a TOC with links to each subsectio
   - [e_lfanew](#e_lfanew)
 
 - [2. DOS Stub](#2-dos-stub)
+
+- [2.5 Padding](#25-padding)
 
 - [3. PE Signature](#3-pe-signature)
 
@@ -308,4 +310,60 @@ It contains legacy fields from the MS-DOS executable format (MZ), which is hardl
 ### e_lfanew
 **Offset:** 0x3C
 **Size:** 4 bytes
-**Description:** Offset to the PE header (start of `"PE\0\0"`) signature.
+**Description:** Offset to the PE header (start of `"PE\0\0"`) signature. The standard value for this is `0x80`, due to how the following sections are laid out.
+
+---
+
+## 2. DOS Stub
+
+The DOS Stub contains a small program that prints the string `This program cannot be run in DOS mode.\r\r$`. The `$` acts as the terminator for this string.
+This is made up of the following instructions:
+```
+0E 1F          ; push cs
+BA 0E 00       ; mov dx, offset msg
+B4 09          ; mov ah, 09h (DOS print string)
+CD 21          ; int 21h
+B8 01 4C       ; mov ax, 4C01h (terminate program)
+CD 21          ; int 21h
+```
+followed by the string itself:
+```
+54 68 69 73 20 70 72 6F 
+67 72 61 6D 20 63 61 6E 
+6E 6F 74 20 62 65 20 72 
+75 6E 20 69 6E 20 44 4F 
+53 20 6D 6F 64 65 2E 0D 
+0D 24
+```
+So the complete data for this section is:
+```
+0E 1F BA 0E 00 B4 09 CD 
+21 B8 01 4C CD 21 54 68 
+69 73 20 70 72 6F 67 72 
+61 6D 20 63 61 6E 6E 6F 
+74 20 62 65 20 72 75 6E 
+20 69 6E 20 44 4F 53 20 
+6D 6F 64 65 2E 0D 0D 24
+```
+While this section is never used in PE files, this is the **standard data** for this section.
+
+---
+
+## 2.5 Padding
+
+This is an unofficial section of the PE file format. Its simply 8 extra `0x00` bytes that follow the previous section (the **DOS Stub**) to let the following section (the **PE Signature**) start on a multiple of 16.
+
+As is defined above, the DOS Header and DOS Stub total to `0x78` bytes. With these padding bytes, it totals to `0x80`. While this hardly makes a difference on modern systems, its standard practice in the PE format.
+
+```
+00 00 00 00 00 00 00 00
+```
+
+---
+
+## 3. PE Signature
+
+The PE Signature marks the beginning of the Windows-specific part of the executable.  
+This is the section that is pointed to by the `e_lfanew` field of the **DOS Header**, so its where Windows will jump when it sees `e_magic == 0x5A4D`.
+
+The PE Signature is 4 bytes long and should always contain the ASCII string `"PE\0\0"` (`0x50450000`).

@@ -263,3 +263,17 @@ TokenBuffer lexer(uint8_t* buf, size_t filesize) {
     return tokenBuffer;
     
 }
+
+void func(int x[5]) {
+
+}
+
+void test(int); // test I
+void test(const int&); // test II
+
+int main() {
+
+    int a = 10;
+    test(a);
+
+}
