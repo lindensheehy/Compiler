@@ -451,3 +451,368 @@ Common flag values include:
 For the purposes of this app, the correct value would be `0x0102` (32-bit Windows executables).
 
 ---
+
+## 5. Optional Header (`IMAGE_OPTIONAL_HEADER32`)
+
+This header provides the Windows loader with information necessary to map and run the executable in memory.  
+
+It primarily describes:  
+- The **entry point** and **base addresses** for code and data  
+- **Memory layout** requirements (stack, heap, section alignment)  
+- **Subsystem type** (console, GUI, driver, etc.)  
+- **Version info** for the OS, image, and subsystem  
+- **Data directories** pointing to key tables like imports, exports, resources, and relocations  
+
+Despite the name “optional”, it is **required for all PE files**.
+
+---
+
+### 5.1 Standard Fields
+
+---
+
+#### Magic
+**Offset:** 0x00  
+**Size:** 2 bytes  
+**Description:**  
+
+---
+
+#### MajorLinkerVersion
+**Offset:** 0x02  
+**Size:** 1 byte  
+**Description:**  
+
+---
+
+#### MinorLinkerVersion
+**Offset:** 0x03  
+**Size:** 1 byte  
+**Description:**  
+
+---
+
+#### SizeOfCode
+**Offset:** 0x04  
+**Size:** 4 bytes  
+**Description:**  
+
+---
+
+#### SizeOfInitializedData
+**Offset:** 0x08  
+**Size:** 4 bytes  
+**Description:**  
+
+---
+
+#### SizeOfUninitializedData
+**Offset:** 0x0C  
+**Size:** 4 bytes  
+**Description:**  
+
+---
+
+#### AddressOfEntryPoint
+**Offset:** 0x10  
+**Size:** 4 bytes  
+**Description:**  
+
+---
+
+#### BaseOfCode
+**Offset:** 0x14  
+**Size:** 4 bytes  
+**Description:**  
+
+---
+
+#### BaseOfData
+**Offset:** 0x18  
+**Size:** 4 bytes  
+**Description:**  
+
+---
+
+### 5.2 Windows-Specific Fields
+
+---
+
+#### ImageBase
+**Offset:** 0x1C  
+**Size:** 4 bytes  
+**Description:**  
+
+---
+
+#### SectionAlignment
+**Offset:** 0x20  
+**Size:** 4 bytes  
+**Description:**  
+
+---
+
+#### FileAlignment
+**Offset:** 0x24  
+**Size:** 4 bytes  
+**Description:**  
+
+---
+
+#### MajorOperatingSystemVersion
+**Offset:** 0x28  
+**Size:** 2 bytes  
+**Description:**  
+
+---
+
+#### MinorOperatingSystemVersion
+**Offset:** 0x2A  
+**Size:** 2 bytes  
+**Description:**  
+
+---
+
+#### MajorImageVersion
+**Offset:** 0x2C  
+**Size:** 2 bytes  
+**Description:**  
+
+---
+
+#### MinorImageVersion
+**Offset:** 0x2E  
+**Size:** 2 bytes  
+**Description:**  
+
+---
+
+#### MajorSubsystemVersion
+**Offset:** 0x30  
+**Size:** 2 bytes  
+**Description:**  
+
+---
+
+#### MinorSubsystemVersion
+**Offset:** 0x32  
+**Size:** 2 bytes  
+**Description:**  
+
+---
+
+#### Win32VersionValue
+**Offset:** 0x34  
+**Size:** 4 bytes  
+**Description:**  
+
+---
+
+#### SizeOfImage
+**Offset:** 0x38  
+**Size:** 4 bytes  
+**Description:**  
+
+---
+
+#### SizeOfHeaders
+**Offset:** 0x3C  
+**Size:** 4 bytes  
+**Description:**  
+
+---
+
+#### CheckSum
+**Offset:** 0x40  
+**Size:** 4 bytes  
+**Description:**  
+
+---
+
+#### Subsystem
+**Offset:** 0x44  
+**Size:** 2 bytes  
+**Description:**  
+
+---
+
+#### DllCharacteristics
+**Offset:** 0x46  
+**Size:** 2 bytes  
+**Description:**  
+
+---
+
+#### SizeOfStackReserve
+**Offset:** 0x48  
+**Size:** 4 bytes  
+**Description:**  
+
+---
+
+#### SizeOfStackCommit
+**Offset:** 0x4C  
+**Size:** 4 bytes  
+**Description:**  
+
+---
+
+#### SizeOfHeapReserve
+**Offset:** 0x50  
+**Size:** 4 bytes  
+**Description:**  
+
+---
+
+#### SizeOfHeapCommit
+**Offset:** 0x54  
+**Size:** 4 bytes  
+**Description:**  
+
+---
+
+#### LoaderFlags
+**Offset:** 0x58  
+**Size:** 4 bytes  
+**Description:**  
+
+---
+
+#### NumberOfRvaAndSizes
+**Offset:** 0x5C  
+**Size:** 4 bytes  
+**Description:**  
+
+---
+
+### 5.3 Data Directories (`IMAGE_DATA_DIRECTORY[16]`)
+
+---
+
+#### VirtualAddress
+**Offset:** 0x60  
+**Size:** 4 bytes  
+**Description:**  
+
+---
+
+#### Size
+**Offset:** 0x64  
+**Size:** 4 bytes  
+**Description:**  
+
+---
+
+#### Directory Entries
+
+---
+
+##### Export Table
+**Offset:** 0x00 (relative to DataDirectories start)  
+**Size:** 8 bytes  
+**Description:**  
+
+---
+
+##### Import Table
+**Offset:** 0x08  
+**Size:** 8 bytes  
+**Description:**  
+
+---
+
+##### Resource Table
+**Offset:** 0x10  
+**Size:** 8 bytes  
+**Description:**  
+
+---
+
+##### Exception Table
+**Offset:** 0x18  
+**Size:** 8 bytes  
+**Description:**  
+
+---
+
+##### Certificate Table
+**Offset:** 0x20  
+**Size:** 8 bytes  
+**Description:**  
+
+---
+
+##### Base Relocation Table
+**Offset:** 0x28  
+**Size:** 8 bytes  
+**Description:**  
+
+---
+
+##### Debug Directory
+**Offset:** 0x30  
+**Size:** 8 bytes  
+**Description:**  
+
+---
+
+##### Architecture
+**Offset:** 0x38  
+**Size:** 8 bytes  
+**Description:**  
+
+---
+
+##### Global Pointer
+**Offset:** 0x40  
+**Size:** 8 bytes  
+**Description:**  
+
+---
+
+##### TLS Table
+**Offset:** 0x48  
+**Size:** 8 bytes  
+**Description:**  
+
+---
+
+##### Load Configuration Table
+**Offset:** 0x50  
+**Size:** 8 bytes  
+**Description:**  
+
+---
+
+##### Bound Import Table
+**Offset:** 0x58  
+**Size:** 8 bytes  
+**Description:**  
+
+---
+
+##### Import Address Table (IAT)
+**Offset:** 0x60  
+**Size:** 8 bytes  
+**Description:**  
+
+---
+
+##### Delay Import Descriptor
+**Offset:** 0x68  
+**Size:** 8 bytes  
+**Description:**  
+
+---
+
+##### COM Descriptor
+**Offset:** 0x70  
+**Size:** 8 bytes  
+**Description:**  
+
+---
+
+##### Reserved
+**Offset:** 0x78  
+**Size:** 8 bytes  
+**Description:**  
