@@ -474,63 +474,73 @@ Despite the name “optional”, it is **required for all PE files**.
 #### Magic
 **Offset:** 0x00  
 **Size:** 2 bytes  
-**Description:**  
+**Description:** Indicates what type of optional header follows, since its not the same in all file types. 
+
+Common values:
+| Version | Value |
+| ------- | ----- |
+| 32-bit (PE32) | `0x010B` |
+| 64-bit (PE32+) | `0x020B` |
+
+Since this compiler is targeting x86, the value should always be `0x010B`.
 
 ---
 
 #### MajorLinkerVersion
 **Offset:** 0x02  
 **Size:** 1 byte  
-**Description:**  
+**Description:** This field is purely informational, and is ignored by the Windows loader. **Can be left as 0**.
 
 ---
 
 #### MinorLinkerVersion
 **Offset:** 0x03  
 **Size:** 1 byte  
-**Description:**  
+**Description:** This field is purely informational, and is ignored by the Windows loader. **Can be left as 0**.
 
 ---
 
 #### SizeOfCode
 **Offset:** 0x04  
 **Size:** 4 bytes  
-**Description:**  
+**Description:** This field is informational. It's simply the total size (in bytes) of the **code** in the exectuable, so the sum of all individual code sections. **Can be left as 0**.
 
 ---
 
 #### SizeOfInitializedData
 **Offset:** 0x08  
 **Size:** 4 bytes  
-**Description:**  
+**Description:** This field is informational. It's simply the total size (in bytes) of the **initialized data** in the exectuable, so the sum of all individual initialized data sections. **Can be left as 0**.
 
 ---
 
 #### SizeOfUninitializedData
 **Offset:** 0x0C  
 **Size:** 4 bytes  
-**Description:**  
+**Description:** This field is informational. It's simply the total size (in bytes) of the **uninitialized data** in the exectuable, so the sum of all individual uninitialized data sections. **Can be left as 0**.
 
 ---
 
 #### AddressOfEntryPoint
 **Offset:** 0x10  
 **Size:** 4 bytes  
-**Description:**  
+**Description:** Relative virtual address of the programs entry point. 
+
+For the purposes of this project, this should point to the first instruction of `main()` within the `.text` section. It sometimes points to runtime startup which precede main, but that will not be the case here.
 
 ---
 
 #### BaseOfCode
 **Offset:** 0x14  
 **Size:** 4 bytes  
-**Description:**  
+**Description:** Relative virtual address of the start of the code section (`.text`). Should be aligned to `SectionAlignment` (under `5.2 Windows-Specific Fields`)
 
 ---
 
 #### BaseOfData
 **Offset:** 0x18  
 **Size:** 4 bytes  
-**Description:**  
+**Description:** Relative virtual address of the start of the initialized data sections (`.data`, `.rdata`, etc.). Should be aligned to `SectionAlignment` (under `5.2 Windows-Specific Fields`)
 
 ---
 
