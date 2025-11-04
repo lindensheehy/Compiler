@@ -551,165 +551,177 @@ For the purposes of this project, this should point to the first instruction of 
 #### ImageBase
 **Offset:** 0x1C  
 **Size:** 4 bytes  
-**Description:**  
+**Description:** The preferred virtual address for the *start* of the executable when loaded into memory. All **Relative Virtual Addresses (RVAs)** (like `AddressOfEntryPoint`) are offsets from this base.
+
+For 32-bit executables, the standard value is `0x00400000`. If the loader can't load the file at this address (e.g., another DLL is already there), it will load it elsewhere, and the **Base Relocation Table** (if present) will be used to "fix up" any hardcoded addresses.
 
 ---
 
 #### SectionAlignment
 **Offset:** 0x20  
 **Size:** 4 bytes  
-**Description:**  
+**Description:** The alignment (in bytes) of sections when they are loaded into memory. This value must be a power of 2 and greater than or equal to `FileAlignment`.
+
+The common default for 32-bit systems is `0x1000` (4096 bytes), which is the default page size for the x86 architecture. Each section's `VirtualAddress` in the section table must be a multiple of this value.
 
 ---
 
 #### FileAlignment
 **Offset:** 0x24  
 **Size:** 4 bytes  
-**Description:**  
+**Description:** The alignment (in bytes) of section data as it's laid out in the file on disk. This value must be a power of 2, typically `0x200` (512 bytes).
+
+This means the `PointerToRawData` for each section in the section table must be a multiple of this value. The space between the end of one section's raw data and the start of the next is padded with `0x00` bytes to enforce this.
 
 ---
 
 #### MajorOperatingSystemVersion
 **Offset:** 0x28  
 **Size:** 2 bytes  
-**Description:**  
+**Description:** The major version number of the minimum required operating system. For example, for Windows XP, this would be 5. For a simple program, this can often be set to `4` or `5`.
 
 ---
 
 #### MinorOperatingSystemVersion
 **Offset:** 0x2A  
 **Size:** 2 bytes  
-**Description:**  
+**Description:** The minor version number of the minimum required operating system. For Windows XP, this would be 1. For a simple program, this can be set to `0`.
 
 ---
 
 #### MajorImageVersion
 **Offset:** 0x2C  
 **Size:** 2 bytes  
-**Description:**  
+**Description:** The major version number of *this executable file*. This is set by the developer and is purely informational. The loader doesn't care about it. **Can be left as 0**.
 
 ---
 
 #### MinorImageVersion
 **Offset:** 0x2E  
 **Size:** 2 bytes  
-**Description:**  
+**Description:** The minor version number of *this executable file*. Like the major version, this is informational. **Can be left as 0**.
 
 ---
 
 #### MajorSubsystemVersion
 **Offset:** 0x30  
 **Size:** 2 bytes  
-**Description:**  
+**Description:** The major version of the subsystem this program is built for (e.g., the Windows CUI or GUI subsystem). This should generally match the `MajorOperatingSystemVersion`. Setting it to `4` or `5` is generally safe.
 
 ---
 
 #### MinorSubsystemVersion
 **Offset:** 0x32  
 **Size:** 2 bytes  
-**Description:**  
+**Description:** The minor version of the subsystem. **Can be left as 0**.
 
 ---
 
 #### Win32VersionValue
 **Offset:** 0x34  
 **Size:** 4 bytes  
-**Description:**  
+**Description:** This field is reserved and **must be set to 0**.
 
 ---
 
 #### SizeOfImage
 **Offset:** 0x38  
 **Size:** 4 bytes  
-**Description:**  
+**Description:** The total size (in bytes) of the image in virtual memory. This is the distance from `ImageBase` to the end of the last section, rounded up to the nearest multiple of `SectionAlignment`.
+
+This is a **critical field**. A wrong value will cause faulty loading.
 
 ---
 
 #### SizeOfHeaders
 **Offset:** 0x3C  
 **Size:** 4 bytes  
-**Description:**  
+**Description:** The combined size of all headers (DOS Header, DOS Stub, PE Signature, COFF Header, Optional Header, and the full Section Table) rounded up to the nearest multiple of `FileAlignment`.
+
+This value tells the loader where the raw data for the *first section* begins in the file.
 
 ---
 
 #### CheckSum
 **Offset:** 0x40  
 **Size:** 4 bytes  
-**Description:**  
+**Description:** A checksum of the PE file. This is only required for system drivers and some system DLLs. For a user-mode executable, the loader ignores this field. **Can be left as 0**.
 
 ---
 
 #### Subsystem
 **Offset:** 0x44  
 **Size:** 2 bytes  
-**Description:**  
+**Description:** **This is a critical field.** It tells the operating system what kind of program this is, which determines how it's run.
+
+For our purposes, the main values are:
+| Flag | Value | Description |
+| ---- | ----- | ----------- |
+| `IMAGE_SUBSYSTEM_WINDOWS_GUI` | `0x0002` | A graphical (GUI) application. |
+| `IMAGE_SUBSYSTEM_WINDOWS_CUI` | `0x0003` | A console (command-line) application. |
+
+For development, **this should be set to `0x0003`**. We may want to create a flag in the future to allow `0x0002` if that becomes a need.
 
 ---
 
 #### DllCharacteristics
 **Offset:** 0x46  
 **Size:** 2 bytes  
-**Description:**  
+**Description:** A set of flags that specify characteristics of a DLL. While this is named for DLLs, it's also used by EXEs to opt-in to certain security features. For our purposes, it **can be left as 0**.
 
 ---
 
 #### SizeOfStackReserve
 **Offset:** 0x48  
 **Size:** 4 bytes  
-**Description:**  
+**Description:** The total amount of virtual memory to *reserve* for the main thread's stack, in bytes. The loader only reserves this space; it doesn't allocate physical memory for it all at once. The typical default is `0x100000` (1 MB).
 
 ---
 
 #### SizeOfStackCommit
 **Offset:** 0x4C  
 **Size:** 4 bytes  
-**Description:**  
+**Description:** The amount of memory (in bytes) to *initially commit* from the reserved stack space. The rest is committed on demand as the stack grows. This is typically set to the system's page size, `0x1000` (4096 bytes).
 
 ---
 
 #### SizeOfHeapReserve
 **Offset:** 0x50  
 **Size:** 4 bytes  
-**Description:**  
+**Description:** The total amount of virtual memory to *reserve* for the process's default heap, in bytes. This is the heap used by functions like `malloc`. The typical default is `0x100000` (1 MB).
 
 ---
 
 #### SizeOfHeapCommit
 **Offset:** 0x54  
 **Size:** 4 bytes  
-**Description:**  
+**Description:** The amount of memory (in bytes) to *initially commit* from the reserved heap space. The typical default is `0x1000` (4096 bytes).
 
 ---
 
 #### LoaderFlags
 **Offset:** 0x58  
 **Size:** 4 bytes  
-**Description:**  
+**Description:** This field is obsolete. **Must be set to 0**.
 
 ---
 
 #### NumberOfRvaAndSizes
 **Offset:** 0x5C  
 **Size:** 4 bytes  
-**Description:**  
+**Description:** The number of data directory entries that follow this field. **Should always be set to `0x10`**.
 
 ---
 
 ### 5.3 Data Directories (`IMAGE_DATA_DIRECTORY[16]`)
 
----
+This section is not a typical header. Instead, it's an array of 16 `IMAGE_DATA_DIRECTORY` structures, one right after the other. The `NumberOfRvaAndSizes` field (which we set to `0x10`) tells the loader to read all 16 entries.
 
-#### VirtualAddress
-**Offset:** 0x60  
-**Size:** 4 bytes  
-**Description:**  
+Each 8-byte entry in this array is a *pointer* to another data structure elsewhere in the file. It consists of two 4-byte fields:
+* **VirtualAddress (4 bytes):** The RVA (Relative Virtual Address) of the data structure.
+* **Size (4 bytes):** The total size (in bytes) of that data structure.
 
----
-
-#### Size
-**Offset:** 0x64  
-**Size:** 4 bytes  
-**Description:**  
+If an entry is not used, both its `VirtualAddress` and `Size` **should be set to 0**.
 
 ---
 
@@ -720,109 +732,111 @@ For the purposes of this project, this should point to the first instruction of 
 ##### Export Table
 **Offset:** 0x00 (relative to DataDirectories start)  
 **Size:** 8 bytes  
-**Description:**  
+**Description:** Points to the **Export Directory** (`IMAGE_EXPORT_DIRECTORY`), which lists the functions and variables that *this file* provides to other executables. This is essential for DLLs, but for our purposes, it's not needed. **Can be left as 0**.
 
 ---
 
 ##### Import Table
 **Offset:** 0x08  
 **Size:** 8 bytes  
-**Description:**  
+**Description:** **This is a critical entry.** It points to the **Import Directory** (an array of `IMAGE_IMPORT_DESCRIPTOR` structures), which is typically in the `.idata` section. This directory lists all the DLLs (like `kernel32.dll`) and functions (like `ExitProcess`) that the program needs to run.
 
 ---
 
 ##### Resource Table
 **Offset:** 0x10  
 **Size:** 8 bytes  
-**Description:**  
+**Description:** Points to the root of the **Resource Directory** (`IMAGE_RESOURCE_DIRECTORY`), which is usually in the `.rsrc` section. This is for things like icons, cursors, string tables, and version information. **Can be left as 0**.
 
 ---
 
 ##### Exception Table
 **Offset:** 0x18  
 **Size:** 8 bytes  
-**Description:**  
+**Description:** Points to the table of exception handling information. For 32-bit x86, this is for Structured Exception Handling (SEH). **Can be left as 0**.
 
 ---
 
 ##### Certificate Table
 **Offset:** 0x20  
 **Size:** 8 bytes  
-**Description:**  
+**Description:** Points to the **Attribute Certificate Table**. This is for digital signatures (`Authenticode`). Unlike other entries, the `VirtualAddress` is a *file offset*, not an RVA. **Can be left as 0**.
 
 ---
 
 ##### Base Relocation Table
 **Offset:** 0x28  
 **Size:** 8 bytes  
-**Description:**  
+**Description:** Points to the **Base Relocation Table** (usually in a `.reloc` section). This table contains a list of all the hardcoded addresses in our code (like `mov eax, 0x00401000`) that need to be "fixed" by the loader if it can't load the program at its preferred `ImageBase` (`0x00400000`).
+
+While optional for a simple EXE, it's good practice. For simplicity, it **can be left as 0**, as long as the code is position independant or will certainly load at the preferred `ImageBase`.
 
 ---
 
 ##### Debug Directory
 **Offset:** 0x30  
 **Size:** 8 bytes  
-**Description:**  
+**Description:** Points to an array of **Debug Directories** (`IMAGE_DEBUG_DIRECTORY`). This is used to link the executable to a debug file (like a PDB). It's not needed for the program to run. **Can be left as 0**.
 
 ---
 
 ##### Architecture
 **Offset:** 0x38  
 **Size:** 8 bytes  
-**Description:**  
+**Description:** Reserved for architecture-specific data. **Must be 0.**
 
 ---
 
 ##### Global Pointer
 **Offset:** 0x40  
 **Size:** 8 bytes  
-**Description:**  
+**Description:** Points to the RVA of the global pointer value, which is used by some CPU architectures (like Itanium) for optimization. For x86, this is not used. **Can be left as 0**.
 
 ---
 
 ##### TLS Table
 **Offset:** 0x48  
 **Size:** 8 bytes  
-**Description:**  
+**Description:** Points to the **Thread Local Storage (TLS) Directory** (`IMAGE_TLS_DIRECTORY`). This is for supporting `__declspec(thread)` variables. **Can be left as 0**.
 
 ---
 
 ##### Load Configuration Table
 **Offset:** 0x50  
 **Size:** 8 bytes  
-**Description:**  
+**Description:** Points to the **Load Configuration Directory** (`IMAGE_LOAD_CONFIG_DIRECTORY`). This contains various advanced/security-related loader settings. **Can be left as 0**.
 
 ---
 
 ##### Bound Import Table
 **Offset:** 0x58  
 **Size:** 8 bytes  
-**Description:**  
+**Description:** Points to a table used for "bound imports," an optimization for older Windows versions that pre-links DLLs. This is now obsolete. **Can be left as 0**.
 
 ---
 
 ##### Import Address Table (IAT)
 **Offset:** 0x60  
 **Size:** 8 bytes  
-**Description:**  
+**Description:** **This is a critical entry.** It points to the **Import Address Table** (IAT). The IAT is an array of function pointers that the loader will fill in at runtime with the *actual memory addresses* of the imported functions. Our program's `call` instructions will point to entries in this table. This is often part of the `.idata` section.
 
 ---
 
 ##### Delay Import Descriptor
 **Offset:** 0x68  
 **Size:** 8 bytes  
-**Description:**  
+**Description:** Points to a directory of "delay-loaded" imports, which are DLLs that are only loaded when a function from them is first called. **Can be left as 0**.
 
 ---
 
 ##### COM Descriptor
 **Offset:** 0x70  
 **Size:** 8 bytes  
-**Description:**  
+**Description:** Points to a header for .NET (COM) information. **Must be 0.**
 
 ---
 
 ##### Reserved
 **Offset:** 0x78  
 **Size:** 8 bytes  
-**Description:**  
+**Description:** Reserved for future use. **Must be 0.**
