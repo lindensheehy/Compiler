@@ -840,3 +840,102 @@ While optional for a simple EXE, it's good practice. For simplicity, it **can be
 **Offset:** 0x78  
 **Size:** 8 bytes  
 **Description:** Reserved for future use. **Must be 0.**
+
+---
+
+## 6. Section Table (`IMAGE_SECTION_HEADER[]`)
+
+Immediately following the **Optional Header** is the **Section Table**. This is an array of section headers, where the count is defined by the `NumberOfSections` field in the **COFF File Header**.
+
+Each entry is **40 bytes** long and maps a specific section of the file (like `.text` or `.data`) to its location in memory. This table is essentially the "map" the loader uses to place the file contents into virtual memory.
+
+---
+
+### Name
+**Offset:** 0x00  
+**Size:** 8 bytes  
+**Description:** An 8-byte ASCII string that identifies the section (e.g., `.text`, `.data`, `.rsrc`). 
+
+**Note:** This string is **not** guaranteed to be null-terminated if the name is exactly 8 characters long. If the name is shorter than 8 characters, the remaining bytes are null-padded. The loader treats this purely as a label; it does not affect how the section is loaded.
+
+---
+
+### VirtualSize
+**Offset:** 0x08  
+**Size:** 4 bytes  
+**Description:** The total size of the section when loaded into memory, in bytes. If this value is greater than `SizeOfRawData`, the remaining bytes are zero-padded (this is how `.bss` / uninitialized data works).
+
+---
+
+### VirtualAddress
+**Offset:** 0x0C  
+**Size:** 4 bytes  
+**Description:** The **Relative Virtual Address (RVA)** where this section should be loaded in memory. This value must be a multiple of `SectionAlignment` (usually `0x1000`). 
+
+For the first section, this is typically `0x1000`. For subsequent sections, it is the sum of the previous section's `VirtualAddress` and `VirtualSize`, rounded up to the next `SectionAlignment`.
+
+---
+
+### SizeOfRawData
+**Offset:** 0x10  
+**Size:** 4 bytes  
+**Description:** The size of the section's data **on disk**, in bytes. This must be a multiple of `FileAlignment` (usually `0x200`). 
+
+If `VirtualSize` < `SizeOfRawData`, the extra data on disk is ignored. If `VirtualSize` > `SizeOfRawData`, the extra memory is filled with zeros.
+
+---
+
+### PointerToRawData
+**Offset:** 0x14  
+**Size:** 4 bytes  
+**Description:** The file offset (raw address) where the section's data begins on the disk. This must be a multiple of `FileAlignment`. If the section contains only uninitialized data (like `.bss`), this should be **0**.
+
+---
+
+### PointerToRelocations
+**Offset:** 0x18  
+**Size:** 4 bytes  
+**Description:** File pointer to the relocation entries for this section. This is used in object files (`.o`), but not for linked executables (`.exe`). **Set to 0**.
+
+---
+
+### PointerToLinenumbers
+**Offset:** 0x1C  
+**Size:** 4 bytes  
+**Description:** File pointer to COFF line number entries. This is legacy debug information. **Set to 0**.
+
+---
+
+### NumberOfRelocations
+**Offset:** 0x20  
+**Size:** 2 bytes  
+**Description:** The number of relocation entries pointed to by `PointerToRelocations`. **Set to 0**.
+
+---
+
+### NumberOfLinenumbers
+**Offset:** 0x22  
+**Size:** 2 bytes  
+**Description:** The number of line number entries pointed to by `PointerToLinenumbers`. **Set to 0**.
+
+---
+
+### Characteristics
+**Offset:** 0x24  
+**Size:** 4 bytes  
+**Description:** A set of flags (bitmask) that describes the memory properties of the section (Read, Write, Execute).
+
+Common flags include:
+| Flag | Value | Description |
+| ---- | ----- | ----------- |
+| `IMAGE_SCN_CNT_CODE` | `0x00000020` | The section contains executable code. |
+| `IMAGE_SCN_CNT_INITIALIZED_DATA` | `0x00000040` | The section contains initialized data. |
+| `IMAGE_SCN_CNT_UNINITIALIZED_DATA` | `0x00000080` | The section contains uninitialized data. |
+| `IMAGE_SCN_MEM_EXECUTE` | `0x20000000` | The section can be executed as code. |
+| `IMAGE_SCN_MEM_READ` | `0x40000000` | The section can be read. |
+| `IMAGE_SCN_MEM_WRITE` | `0x80000000` | The section can be written to. |
+
+**Typical Combinations:**
+* **.text:** `0x60000020` (Code + Execute + Read)
+* **.data:** `0xC0000040` (Initialized Data + Read + Write)
+* **.rdata:** `0x40000040` (Initialized Data + Read)
